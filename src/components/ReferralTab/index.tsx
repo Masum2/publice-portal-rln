@@ -1,10 +1,44 @@
 // ReferralTab/index.tsx
 import React from 'react';
-import { User, MapPin, Loader, Save } from 'lucide-react';
+import { User, MapPin } from 'lucide-react';
 
 import type { ReferralTabErrors, ReferralTabState } from '../../types/ReferralTab/types';
 import { SaveButton } from '../SaveButton';
-// import type type { ReferralTabState, ReferralTabErrors } from './types';
+
+// Data arrays
+const STATES = [
+  'Minnesota', 'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California',
+  'Colorado', 'Connecticut', 'Delware', 'Florida', 'Georgia', 'Hawaii',
+  'Idaho', 'lllinois', 'Indiana', 'lowa', 'Kansas', 'Kentucky', 'Louisiana',
+  'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Mississippi', 'Missouri',
+  'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey', 'New Mexico',
+  'New York', 'North Carolina', 'North Dakota', 'ohio', 'Oklahoma', 'Oregon',
+  'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota', 'Tennessee',
+  'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington', 'West Virginia',
+  'Wisconsin', 'Wyoming'
+];
+
+const COMMUNITIES = [
+  'Redby', 'Red Lake', 'Little Rock', 'Ponemah', 'Other', 'Unknown'
+];
+
+const COUNTIES = [
+  'Beltrami County', 'Clearwater', 'Aitkin', 'Anoka', 'Becker', 'Benton',
+  'Big Stone', 'Blue Earth', 'Brown', 'Carver', 'Carlton', 'Cass',
+  'CHippewa', 'Chisago', 'Clay', 'Cottonwood', 'Crow Wing', 'Dakota',
+  'Dodge', 'Douglas', 'Faribault', 'Fillmore', 'Freeborn', 'Goodhue',
+  'Grant', 'Hennepin', 'Houston', 'Hubbard', 'Isanti', 'Itasca',
+  'Jackson', 'Kanabec', 'Kandiyochi', 'Kittson', 'Koochiching',
+  'Lac qui Parle', 'Lake', 'Lake of the Woods', 'Le Sueur', 'Lincoln',
+  'Mahnomen', 'Marshall', 'Martin', 'McLeod', 'Meeker', 'Mile Lacs',
+  'Morrison', 'Mower', 'Murry', 'Nicollet', 'Nobles', 'Norman',
+  'Olmsted', 'Otter Tail', 'Pennington', 'Pine', 'Pipestone', 'Polk',
+  'Pope', 'Ramsey', 'Red Lake', 'Redwood', 'Renville', 'Rice', 'Rock',
+  'Roseau', 'St.Louis', 'Scott', 'Sherburne', 'Sibley', 'Stearns',
+  'Steele', 'Stevens', 'Swift', 'Todd', 'traverse', 'Wabasha', 'Wadena',
+  'Waseca', 'Washington', 'Wilkin', 'Winona', 'Wright', 'Yellow Medicine',
+  'Cook'
+];
 
 interface ReferralTabProps {
   state: ReferralTabState;
@@ -13,6 +47,17 @@ interface ReferralTabProps {
   isLoading: boolean;
   onSave: () => void;
 }
+
+const formatPhoneNumber = (value: string) => {
+  const cleaned = value.replace(/\D/g, '');
+  if (cleaned.length <= 3) {
+    return cleaned;
+  } else if (cleaned.length <= 6) {
+    return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3)}`;
+  } else {
+    return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6, 10)}`;
+  }
+};
 
 export const ReferralTab: React.FC<ReferralTabProps> = ({
   state,
@@ -44,78 +89,66 @@ export const ReferralTab: React.FC<ReferralTabProps> = ({
     </label>
   );
 
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>, field: keyof ReferralTabState) => {
+    const rawValue = e.target.value.replace(/\D/g, '');
+    const formattedValue = formatPhoneNumber(rawValue);
+    updateField(field, formattedValue as any);
+  };
+
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Reporting Date & Time */}
+        {/* ===== VICTIM INFORMATION - TOP SECTION ===== */}
+        <div className="md:col-span-2">
+          <h3 className="text-sm font-bold text-purple-600 uppercase tracking-wider flex items-center gap-2">
+            <User className="w-4 h-4" />
+            Victim / Client Information
+          </h3>
+        </div>
+
         <div>
           <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-            Reporting Date
+            Victim's Name <span className="text-red-500">*</span>
           </label>
           <input
-            type="date"
-            value={state.reportingDate}
-            onChange={(e) => updateField('reportingDate', e.target.value)}
-            className="w-full p-3.5 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition"
+            type="text"
+            value={state.victimName}
+            onChange={(e) => updateField('victimName', e.target.value)}
+            className={`w-full p-3.5 bg-white border rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition ${
+              errors.victimName ? 'border-red-500' : 'border-gray-200'
+            }`}
+            placeholder="Full name"
+          />
+          {errors.victimName && <p className="text-xs text-red-500 font-semibold mt-1">⚠️ {errors.victimName}</p>}
+        </div>
+
+        <div>
+          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+            Victim Age
+          </label>
+          <input
+            type="number"
+            value={state.victimAge}
+            onChange={(e) => updateField('victimAge', e.target.value)}
+            className="w-full p-3.5 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition"
+            placeholder="Age"
           />
         </div>
-        <div>
+
+        <div className="md:col-span-2">
           <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-            Reporting Time
+            Victim Address
           </label>
-          <select
-            value={state.reportingTime}
-            onChange={(e) => updateField('reportingTime', e.target.value)}
-            className="w-full p-3.5 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition"
-          >
-            {Array.from({ length: 24 }, (_, i) => {
-              const hour = Math.floor(i / 2) + 8;
-              const min = i % 2 === 0 ? '00' : '30';
-              const ampm = hour >= 12 ? 'PM' : 'AM';
-              const displayHour = hour > 12 ? hour - 12 : hour;
-              return (
-                <option key={i} value={`${hour}:${min}`}>
-                  {`${displayHour}:${min} ${ampm}`}
-                </option>
-              );
-            })}
-          </select>
+          <textarea
+            rows={2}
+            value={state.victimAddress}
+            onChange={(e) => updateField('victimAddress', e.target.value)}
+            className="w-full p-3.5 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition resize-none"
+            placeholder="Victim's address"
+          />
         </div>
 
-        {/* Reporting Method & Source */}
-        <div>
-          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-            Reporting Method
-          </label>
-          <select
-            value={state.reportingMethod}
-            onChange={(e) => updateField('reportingMethod', e.target.value)}
-            className="w-full p-3.5 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition"
-          >
-            <option>Letter</option>
-            <option>Face to Face</option>
-            <option>Phone</option>
-            <option>Electronically</option>
-          </select>
-        </div>
-        <div>
-          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-            Reporting Source
-          </label>
-          <select
-            value={state.reportingSource}
-            onChange={(e) => updateField('reportingSource', e.target.value)}
-            className="w-full p-3.5 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition"
-          >
-            <option>Maarc</option>
-            <option>Directly</option>
-            <option>Law Enforcement</option>
-            <option>County</option>
-            <option>Internal</option>
-          </select>
-        </div>
-
-        {/* Reporter Information */}
+        {/* ===== REPORTER INFORMATION - AFTER VICTIM ===== */}
         <div className="md:col-span-2 border-t border-gray-200 pt-6">
           <h3 className="text-sm font-bold text-blue-600 uppercase tracking-wider flex items-center gap-2">
             <User className="w-4 h-4" />
@@ -207,12 +240,10 @@ export const ReferralTab: React.FC<ReferralTabProps> = ({
             onChange={(e) => updateField('reporterState', e.target.value)}
             className="w-full p-3.5 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition"
           >
-            <option>CA</option>
-            <option>NY</option>
-            <option>TX</option>
-            <option>FL</option>
-            <option>IL</option>
-            <option>Other</option>
+            <option value="">Select State</option>
+            {STATES.map((state) => (
+              <option key={state} value={state}>{state}</option>
+            ))}
           </select>
         </div>
 
@@ -240,15 +271,12 @@ export const ReferralTab: React.FC<ReferralTabProps> = ({
           <input
             type="tel"
             value={state.reporterPhone}
-            onChange={(e) => {
-              const value = e.target.value.replace(/\D/g, '');
-              updateField('reporterPhone', value);
-            }}
+            onChange={(e) => handlePhoneChange(e, 'reporterPhone')}
             className={`w-full p-3.5 bg-white border rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition ${
               errors.reporterPhone ? 'border-red-500' : 'border-gray-200'
             }`}
-            placeholder="5551234567"
-            maxLength={10}
+            placeholder="(555) 123-4567"
+            maxLength={14}
           />
           {errors.reporterPhone && <p className="text-xs text-red-500 font-semibold mt-1">⚠️ {errors.reporterPhone}</p>}
         </div>
@@ -303,7 +331,7 @@ export const ReferralTab: React.FC<ReferralTabProps> = ({
           {renderCheckbox('Wants to be informed?', 'wantsToBeInformed')}
         </div>
 
-        {/* Incident Location */}
+        {/* ===== INCIDENT LOCATION ===== */}
         <div className="md:col-span-2 border-t border-gray-200 pt-6">
           <h3 className="text-sm font-bold text-amber-600 uppercase tracking-wider flex items-center gap-2">
             <MapPin className="w-4 h-4" />
@@ -349,12 +377,10 @@ export const ReferralTab: React.FC<ReferralTabProps> = ({
             onChange={(e) => updateField('incidentState', e.target.value)}
             className="w-full p-3.5 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition"
           >
-            <option>CA</option>
-            <option>NY</option>
-            <option>TX</option>
-            <option>FL</option>
-            <option>IL</option>
-            <option>Other</option>
+            <option value="">Select State</option>
+            {STATES.map((state) => (
+              <option key={state} value={state}>{state}</option>
+            ))}
           </select>
         </div>
 
@@ -362,13 +388,16 @@ export const ReferralTab: React.FC<ReferralTabProps> = ({
           <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
             County
           </label>
-          <input
-            type="text"
+          <select
             value={state.incidentCounty}
             onChange={(e) => updateField('incidentCounty', e.target.value)}
-            className="w-full p-3.5 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition"
-            placeholder="County"
-          />
+            className="w-full p-3.5 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition"
+          >
+            <option value="">Select County</option>
+            {COUNTIES.map((county) => (
+              <option key={county} value={county}>{county}</option>
+            ))}
+          </select>
         </div>
 
         <div>
@@ -392,13 +421,16 @@ export const ReferralTab: React.FC<ReferralTabProps> = ({
           <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
             Community
           </label>
-          <input
-            type="text"
+          <select
             value={state.incidentCommunity}
             onChange={(e) => updateField('incidentCommunity', e.target.value)}
-            className="w-full p-3.5 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition"
-            placeholder="Community name"
-          />
+            className="w-full p-3.5 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition"
+          >
+            <option value="">Select Community</option>
+            {COMMUNITIES.map((community) => (
+              <option key={community} value={community}>{community}</option>
+            ))}
+          </select>
         </div>
 
         <div className="md:col-span-2">
@@ -411,56 +443,6 @@ export const ReferralTab: React.FC<ReferralTabProps> = ({
             onChange={(e) => updateField('incidentComments', e.target.value)}
             className="w-full p-3.5 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition resize-none"
             placeholder="Any additional comments about the incident location"
-          />
-        </div>
-
-        {/* Victim Information */}
-        <div className="md:col-span-2 border-t border-gray-200 pt-6">
-          <h3 className="text-sm font-bold text-purple-600 uppercase tracking-wider flex items-center gap-2">
-            <User className="w-4 h-4" />
-            Victim / Client Information
-          </h3>
-        </div>
-
-        <div>
-          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-            Victim's Name <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            value={state.victimName}
-            onChange={(e) => updateField('victimName', e.target.value)}
-            className={`w-full p-3.5 bg-white border rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition ${
-              errors.victimName ? 'border-red-500' : 'border-gray-200'
-            }`}
-            placeholder="Full name"
-          />
-          {errors.victimName && <p className="text-xs text-red-500 font-semibold mt-1">⚠️ {errors.victimName}</p>}
-        </div>
-
-        <div>
-          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-            Victim Age
-          </label>
-          <input
-            type="number"
-            value={state.victimAge}
-            onChange={(e) => updateField('victimAge', e.target.value)}
-            className="w-full p-3.5 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition"
-            placeholder="Age"
-          />
-        </div>
-
-        <div className="md:col-span-2">
-          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-            Victim Address
-          </label>
-          <textarea
-            rows={2}
-            value={state.victimAddress}
-            onChange={(e) => updateField('victimAddress', e.target.value)}
-            className="w-full p-3.5 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition resize-none"
-            placeholder="Victim's address"
           />
         </div>
       </div>

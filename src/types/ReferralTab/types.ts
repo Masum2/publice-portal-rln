@@ -1,9 +1,7 @@
 // ReferralTab/types.ts
+
 export interface ReferralTabState {
-  reportingDate: string;
-  reportingTime: string;
-  reportingMethod: string;
-  reportingSource: string;
+  // ❌ REMOVED: reportingDate, reportingTime, reportingMethod, reportingSource
   reporterFirstName: string;
   reporterLastName: string;
   relationship: string;

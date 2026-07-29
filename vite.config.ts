@@ -13,7 +13,7 @@ export default defineConfig({
     port: 5174,
     proxy: {
       '/beratenApi': {
-        target: 'https://localhost:5001',
+        target: 'https://localhost:44310',
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path,

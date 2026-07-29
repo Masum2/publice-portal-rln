@@ -23,7 +23,7 @@ interface PublicPortalProps {
 
 type TabType = 'referral' | 'casestudy' | 'documents';
 
-// Success Modal Types
+// ✅ SuccessModalState টাইপ ঠিক করা হয়েছে
 interface SuccessModalState {
   isOpen: boolean;
   type: 'referral' | 'casestudy' | 'documents' | 'submission';
@@ -33,6 +33,7 @@ interface SuccessModalState {
     id?: string;
     documentCount?: number;
   };
+  onContinue?: () => void;
 }
 
 export const PublicPortal: React.FC<PublicPortalProps> = ({ onAddReferral }) => {
@@ -40,6 +41,8 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ onAddReferral }) => 
   const [submitted, setSubmitted] = useState(false);
   const [generatedId, setGeneratedId] = useState('');
   const [showSubmitModal, setShowSubmitModal] = useState(false);
+  
+  // ✅ SuccessModal state ঠিক করা হয়েছে
   const [successModal, setSuccessModal] = useState<SuccessModalState>({
     isOpen: false,
     type: 'referral',
@@ -48,18 +51,27 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ onAddReferral }) => 
     details: {},
   });
   
-  // API Hook
   const { submitReferral, submitCaseStudy, isLoading, error, reset: resetApiError } = useReferral();
-  
-  // Store referral ID for case study
   const [referralId, setReferralId] = useState<number | null>(null);
+
+  // Get current date and time for defaults
+  const getCurrentDate = (): string => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const getCurrentTime = (): string => {
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    return `${hours}:${minutes}`;
+  };
 
   // State for all tabs
   const [referralState, setReferralState] = useState({
-    reportingDate: '',
-    reportingTime: '12:00',
-    reportingMethod: 'Phone',
-    reportingSource: 'Directly',
     reporterFirstName: '',
     reporterLastName: '',
     relationship: 'Relative',
@@ -88,8 +100,6 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ onAddReferral }) => 
   });
 
   const [caseStudyState, setCaseStudyState] = useState({
-    incidentDate: '',
-    incidentTime: '',
     incidentDescription: '',
     incidentLocation: '',
     abuseDuration: '',
@@ -126,27 +136,30 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ onAddReferral }) => 
   });
 
   // --- Success Modal Helpers ---
+  // ✅ showSuccessModal টাইপ ঠিক করা হয়েছে
   const showSuccessModal = (
     type: SuccessModalState['type'],
     title: string,
     message: string,
-    details?: { id?: string; documentCount?: number }
-  ) => {
+    details?: { id?: string; documentCount?: number },
+    onContinue?: () => void
+  ): void => {
     setSuccessModal({
       isOpen: true,
       type,
       title,
       message,
       details: details || {},
+      onContinue,
     });
   };
 
-  const closeSuccessModal = () => {
-    setSuccessModal({ ...successModal, isOpen: false });
+  const closeSuccessModal = (): void => {
+    setSuccessModal((prev) => ({ ...prev, isOpen: false }));
   };
 
   // --- File Handler ---
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>): void => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       if (file.size > 10 * 1024 * 1024) {
@@ -165,12 +178,12 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ onAddReferral }) => 
     }
   };
 
-  const removeFile = (id: string) => {
+  const removeFile = (id: string): void => {
     setDocs(docs.filter((d) => d.id !== id));
   };
 
   // --- Validation ---
-  const validateReferralTab = () => {
+  const validateReferralTab = (): boolean => {
     const newErrors: { [key: string]: string } = {};
     if (!referralState.reporterFirstName) newErrors.reporterFirstName = 'First name required';
     if (!referralState.reporterLastName) newErrors.reporterLastName = 'Last name required';
@@ -182,9 +195,8 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ onAddReferral }) => 
     return Object.keys(newErrors).length === 0;
   };
 
-  const validateCaseStudyTab = () => {
+  const validateCaseStudyTab = (): boolean => {
     const newErrors: { [key: string]: string } = {};
-    if (!caseStudyState.incidentDate) newErrors.incidentDate = 'Incident date required';
     if (!caseStudyState.incidentDescription) newErrors.incidentDescription = 'Description required';
     if (!caseStudyState.incidentLocation) newErrors.incidentLocation = 'Location required';
     setErrors(newErrors);
@@ -193,16 +205,11 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ onAddReferral }) => 
 
   // --- Data Preparation Functions ---
   const prepareReferralData = (): CreateReferralRequest => {
-    const reportingSourceMap: { [key: string]: number } = {
-      'Maarc': 1,
-      'Directly': 2,
-      'Law Enforcement': 3,
-      'County': 4,
-      'Internal': 5
-    };
-
     const formatPhone = (phone: string): string => phone.replace(/\D/g, '');
     const formatZip = (zip: string): string => zip.replace(/\D/g, '');
+
+    const currentDate = getCurrentDate();
+    const currentTime = getCurrentTime();
 
     return {
       reporterFirstName: referralState.reporterFirstName || 'John',
@@ -221,10 +228,10 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ onAddReferral }) => 
       address: referralState.incidentAddress || '456 Elm Street',
       city: referralState.incidentCity || 'New York',
       zip: formatZip(referralState.incidentZip) || '10002',
-      reportDate: referralState.reportingDate || new Date().toISOString().split('T')[0],
-      reportTime: referralState.reportingTime || '10:45',
-      reportingMethod: referralState.reportingMethod || 'Online',
-      reportingSource: reportingSourceMap[referralState.reportingSource] || 1,
+      reportDate: currentDate,
+      reportTime: currentTime,
+      reportingMethod: 'Electronically',
+      reportingSource: 2,
       isAdultAbuseBeingReported: true,
       comments: referralState.incidentComments || 'Observed severe neglect and poor living conditions.',
       aps_ClientId: 1,
@@ -242,26 +249,7 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ onAddReferral }) => 
   };
 
   const prepareCaseStudyData = (): CreateCaseStudyRequest => {
-    let formattedIncidentDate = new Date().toISOString();
-    let formattedIncidentTime = new Date().toISOString();
-    
-    if (caseStudyState.incidentDate) {
-      formattedIncidentDate = new Date(caseStudyState.incidentDate).toISOString();
-    }
-    
-    if (caseStudyState.incidentTime) {
-      const timeParts = caseStudyState.incidentTime.split(':');
-      if (timeParts.length === 2) {
-        const date = new Date();
-        date.setHours(parseInt(timeParts[0]));
-        date.setMinutes(parseInt(timeParts[1]));
-        formattedIncidentTime = date.toISOString();
-      }
-    }
-
     return {
-      incidentDate: formattedIncidentDate,
-      incidentTime: formattedIncidentTime,
       incidentLocation: caseStudyState.incidentLocation || '',
       incidentDesc: caseStudyState.incidentDescription || '',
       abuseNeglectOrExploitationDesc: caseStudyState.incidentDescription || '',
@@ -293,7 +281,7 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ onAddReferral }) => 
   };
 
   // --- Save Functions ---
-  const saveReferralTab = async () => {
+  const saveReferralTab = async (): Promise<void> => {
     if (!validateReferralTab()) {
       alert('⚠️ Please fill in all required fields before saving.');
       return;
@@ -325,12 +313,12 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ onAddReferral }) => 
       console.log('📦 Full response from submitReferral:', response);
 
       if (response && response.isSuccess) {
-        let newReferralId = null;
+        let newReferralId: number | null = null;
         
         if (typeof response.data === 'number' || typeof response.data === 'string') {
           newReferralId = parseInt(response.data as string);
         } else if (response.data && typeof response.data === 'object' && 'id' in response.data) {
-          newReferralId = parseInt(response.data.id);
+          newReferralId = parseInt((response.data as { id: string }).id);
         } else if (response.data && typeof response.data === 'object' && 'Data' in response.data) {
           newReferralId = parseInt(String((response.data as { Data: string | number }).Data), 10);
         }
@@ -344,47 +332,54 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ onAddReferral }) => 
         
         setSavedTabs({ ...savedTabs, referral: true });
         
-        // Show Success Modal
+   // PublicPortal/index.tsx - saveReferralTab ফাংশনের ভিতর
+
+const updatedReferral: Referral = {
+  id: String(newReferralId || ''),
+  ...referralState,
+  ...caseStudyState,
+  // ✅ reportingDate, reportingTime, reportingMethod, reportingSource বাদ
+  // ✅ incidentDate, incidentTime বাদ (এগুলো backend এ সেট হবে)
+  status: 'Draft',
+  submittedAt: new Date().toISOString(),
+  reviewStartedAt: null,
+  acceptedAt: null,
+  rejectedAt: null,
+  linkedClientId: null,
+  documents: docs,
+  hasCausedHarm: caseStudyState.hasCausedHarm || false,
+  harmDescription: caseStudyState.harmDescription || '',
+  healthFunctioning: caseStudyState.healthFunctioning || '',
+  inDangerOfDeath: caseStudyState.inDangerOfDeath || false,
+  deathDescription: caseStudyState.deathDescription || '',
+  atRiskOfHarm: caseStudyState.atRiskOfHarm || false,
+  riskDescription: caseStudyState.riskDescription || '',
+  witnessedIncident: caseStudyState.witnessedIncident || false,
+  howBecameAware: caseStudyState.howBecameAware || '',
+  adultKnowsReport: caseStudyState.adultKnowsReport || false,
+  adultReaction: caseStudyState.adultReaction || '',
+  familyKnowsReport: caseStudyState.familyKnowsReport || false,
+  familyMembersKnow: caseStudyState.familyMembersKnow || '',
+  involvedWithDSS: caseStudyState.involvedWithDSS || false,
+  dssDescription: caseStudyState.dssDescription || '',
+  otherReports: caseStudyState.otherReports || false,
+  otherReportsDescription: caseStudyState.otherReportsDescription || '',
+  lawEnforcementInvolved: caseStudyState.lawEnforcementInvolved || false,
+  lawEnforcementDescription: caseStudyState.lawEnforcementDescription || '',
+};
+        
+        onAddReferral(updatedReferral);
+
         showSuccessModal(
           'referral',
           '✅ Referral Information Saved!',
           'Your referral information has been successfully submitted to the system.',
-          { id: newReferralId ? `#${newReferralId}` : undefined }
+          { id: newReferralId ? `#${newReferralId}` : undefined },
+          () => {
+            setActiveTab('casestudy');
+            console.log('🔄 Redirecting to Case Study Tab from modal');
+          }
         );
-        
-        const updatedReferral: Referral = {
-          id: String(newReferralId || ''),
-          ...referralState,
-          ...caseStudyState,
-          status: 'Draft',
-          submittedAt: new Date().toISOString(),
-          reviewStartedAt: null,
-          acceptedAt: null,
-          rejectedAt: null,
-          linkedClientId: null,
-          documents: docs,
-          hasCausedHarm: caseStudyState.hasCausedHarm || false,
-          harmDescription: caseStudyState.harmDescription || '',
-          healthFunctioning: caseStudyState.healthFunctioning || '',
-          inDangerOfDeath: caseStudyState.inDangerOfDeath || false,
-          deathDescription: caseStudyState.deathDescription || '',
-          atRiskOfHarm: caseStudyState.atRiskOfHarm || false,
-          riskDescription: caseStudyState.riskDescription || '',
-          witnessedIncident: caseStudyState.witnessedIncident || false,
-          howBecameAware: caseStudyState.howBecameAware || '',
-          adultKnowsReport: caseStudyState.adultKnowsReport || false,
-          adultReaction: caseStudyState.adultReaction || '',
-          familyKnowsReport: caseStudyState.familyKnowsReport || false,
-          familyMembersKnow: caseStudyState.familyMembersKnow || '',
-          involvedWithDSS: caseStudyState.involvedWithDSS || false,
-          dssDescription: caseStudyState.dssDescription || '',
-          otherReports: caseStudyState.otherReports || false,
-          otherReportsDescription: caseStudyState.otherReportsDescription || '',
-          lawEnforcementInvolved: caseStudyState.lawEnforcementInvolved || false,
-          lawEnforcementDescription: caseStudyState.lawEnforcementDescription || '',
-        };
-        
-        onAddReferral(updatedReferral);
       } else {
         throw new Error(response?.message || 'Failed to save referral');
       }
@@ -394,7 +389,7 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ onAddReferral }) => 
     }
   };
 
-  const saveCaseStudyTab = async () => {
+  const saveCaseStudyTab = async (): Promise<void> => {
     if (!validateCaseStudyTab()) {
       alert('⚠️ Please fill in all required fields before saving.');
       return;
@@ -415,12 +410,15 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ onAddReferral }) => 
       if (response.isSuccess) {
         setSavedTabs({ ...savedTabs, casestudy: true });
         
-        // Show Success Modal
         showSuccessModal(
           'casestudy',
           '📋 Case Study Saved Successfully!',
           'Your case study information has been successfully submitted to the system.',
-          { id: response.data ? `#${response.data}` : undefined }
+          { id: response.data ? `#${response.data}` : undefined },
+          () => {
+            setActiveTab('documents');
+            console.log('🔄 Redirecting to Documents Tab from modal');
+          }
         );
       } else {
         throw new Error(response.message || 'Failed to save case study');
@@ -431,10 +429,9 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ onAddReferral }) => 
     }
   };
 
-  const saveDocumentsTab = () => {
+  const saveDocumentsTab = (): void => {
     setSavedTabs({ ...savedTabs, documents: true });
     
-    // Show Success Modal
     showSuccessModal(
       'documents',
       '📎 Documents Saved Successfully!',
@@ -443,7 +440,7 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ onAddReferral }) => 
     );
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (): Promise<void> => {
     if (!isAgreed) {
       alert('⚠️ Please agree to the disclaimer before submitting.');
       return;
@@ -491,7 +488,6 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ onAddReferral }) => 
     setGeneratedId(trackingId);
     setShowSubmitModal(false);
     
-    // Show Submission Success Modal
     showSuccessModal(
       'submission',
       '🎉 Referral Submitted Successfully!',
@@ -500,13 +496,17 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ onAddReferral }) => 
     );
   };
 
-  const resetForm = () => {
+  const resetForm = (): void => {
     window.location.reload();
   };
 
+  const handleModalContinue = (): void => {
+    if (successModal.onContinue) {
+      successModal.onContinue();
+    }
+    closeSuccessModal();
+  };
 
-
-  // --- Main UI ---
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-sky-50/40 to-indigo-50/30">
       {/* Background Decorations */}
@@ -517,31 +517,29 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ onAddReferral }) => 
       </div>
 
       {/* Header */}
-<header className="sticky top-0 z-50 w-full bg-gradient-to-br from-slate-900/95 via-blue-950/90 to-slate-900/95 backdrop-blur-sm px-6 md:px-12 py-4 border-b border-gray-200/20 shadow-sm">
-  <div className="max-w-7xl mx-auto flex items-center justify-between">
-    <div className="flex items-center gap-4">
-      {/* লোগো সেকশন */}
-      <div className="flex items-center">
-        <img 
-          src="https://www.beratensoftware.com/Images/Logos/BeratenLogo.svg" 
-          alt="Beraten Logo" 
-          className="h-8 md:h-10 w-auto object-contain"
-        />
-      </div>
-      
-      <div>
-        <p className="text-[10px] text-white font-bold tracking-widest uppercase -mt-0.5">
-          Adult & Family Protective Services
-        </p>
-      </div>
-    </div>
-    <div className="flex items-center gap-4">
-      <span className="hidden md:flex text-[10px] font-extrabold bg-emerald-100 text-emerald-700 px-4 py-1.5 rounded-full border border-emerald-200 uppercase tracking-widest">
-        🔒 SECURE PORTAL
-      </span>
-    </div>
-  </div>
-</header>
+      <header className="sticky top-0 z-50 w-full bg-gradient-to-br from-slate-900/95 via-blue-950/90 to-slate-900/95 backdrop-blur-sm px-6 md:px-12 py-4 border-b border-gray-200/20 shadow-sm">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center">
+              <img 
+                src="https://www.beratensoftware.com/Images/Logos/BeratenLogo.svg" 
+                alt="Beraten Logo" 
+                className="h-8 md:h-10 w-auto object-contain"
+              />
+            </div>
+            <div>
+              <p className="text-[10px] text-white font-bold tracking-widest uppercase -mt-0.5">
+                Adult & Family Protective Services
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            <span className="hidden md:flex text-[10px] font-extrabold bg-emerald-100 text-emerald-700 px-4 py-1.5 rounded-full border border-emerald-200 uppercase tracking-widest">
+              🔒 SECURE PORTAL
+            </span>
+          </div>
+        </div>
+      </header>
 
       {/* Main Content */}
       <main className="relative flex-1 flex flex-col items-center p-4 md:p-8 w-full">
@@ -610,9 +608,6 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ onAddReferral }) => 
               )}
             </div>
           </div>
-
-
-      
         </div>
       </main>
 
@@ -642,28 +637,27 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ onAddReferral }) => 
         error={error}
         reporterName={`${referralState.reporterFirstName} ${referralState.reporterLastName}`}
         victimName={referralState.victimName}
-        incidentDate={caseStudyState.incidentDate}
+        incidentDate={getCurrentDate()}
         documentCount={docs.length}
         savedTabs={savedTabs}
       />
 
       <SuccessModal
         isOpen={successModal.isOpen}
-        onClose={closeSuccessModal}
+        onClose={() => {
+          if (successModal.onContinue) {
+            successModal.onContinue();
+          }
+          closeSuccessModal();
+        }}
         type={successModal.type}
         title={successModal.title}
         message={successModal.message}
         details={successModal.details}
-        onContinue={() => {
-          closeSuccessModal();
-          // If submission success, show the final success screen
-          if (successModal.type === 'submission') {
-            setSubmitted(true);
-          }
-        }}
+        onContinue={handleModalContinue}
       />
 
-      {/* Final Submission Success Screen - Only shows when referral is fully submitted */}
+      {/* Final Submission Success Screen */}
       {submitted && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 border border-gray-200 text-center animate-in fade-in zoom-in duration-300">

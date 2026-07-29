@@ -7,10 +7,7 @@ import type {
   Referral
 } from '../types';
 
-// Proxy ব্যবহার করলে খালি রাখুন
-const API_BASE_URL = '';
 
-console.log('🔗 API Base URL (Proxy):', '/beratenApi');
 
 const API_CONFIG = {
   headers: {
@@ -148,7 +145,7 @@ const handleApiCall = async <T>(
       throw new Error(
         '❌ Network Error: Unable to connect to server.\n' +
         'Please check:\n' +
-        '1. Backend is running on https://localhost:5001\n' +
+        '1. Backend is running on https://localhost:44310\n' +
         '2. Proxy is configured in vite.config.js\n' +
         '3. CORS is properly configured in backend\n' +
         '4. No firewall blocking the connection'

@@ -1,6 +1,6 @@
-// SuccessModal/index.tsx
-import React, { useEffect } from 'react';
-import { Check, X, FileText, ClipboardList, Upload, Send, Sparkles } from 'lucide-react';
+// SuccessModal.tsx
+import React from 'react';
+import { CheckCircle, X } from 'lucide-react';
 
 interface SuccessModalProps {
   isOpen: boolean;
@@ -12,7 +12,7 @@ interface SuccessModalProps {
     id?: string;
     documentCount?: number;
   };
-  onContinue?: () => void;
+  onContinue: () => void;  // ✅ Added onContinue prop
 }
 
 export const SuccessModal: React.FC<SuccessModalProps> = ({
@@ -21,157 +21,81 @@ export const SuccessModal: React.FC<SuccessModalProps> = ({
   type,
   title,
   message,
-  details = {},
+  details,
   onContinue,
 }) => {
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [isOpen]);
-
   if (!isOpen) return null;
 
-  const getIcon = () => {
+  const getIconColor = () => {
     switch (type) {
       case 'referral':
-        return <FileText className="w-8 h-8 text-emerald-600" />;
+        return 'text-blue-600';
       case 'casestudy':
-        return <ClipboardList className="w-8 h-8 text-purple-600" />;
+        return 'text-purple-600';
       case 'documents':
-        return <Upload className="w-8 h-8 text-cyan-600" />;
+        return 'text-amber-600';
       case 'submission':
-        return <Send className="w-8 h-8 text-blue-600" />;
+        return 'text-emerald-600';
       default:
-        return <Check className="w-8 h-8 text-emerald-600" />;
+        return 'text-green-600';
     }
   };
 
-  const getGradient = () => {
+  const getButtonColor = () => {
     switch (type) {
       case 'referral':
-        return 'from-emerald-500 to-teal-500';
+        return 'bg-blue-600 hover:bg-blue-500';
       case 'casestudy':
-        return 'from-purple-500 to-indigo-500';
+        return 'bg-purple-600 hover:bg-purple-500';
       case 'documents':
-        return 'from-cyan-500 to-blue-500';
+        return 'bg-amber-600 hover:bg-amber-500';
       case 'submission':
-        return 'from-blue-500 to-indigo-600';
+        return 'bg-emerald-600 hover:bg-emerald-500';
       default:
-        return 'from-emerald-500 to-teal-500';
-    }
-  };
-
-  const getEmoji = () => {
-    switch (type) {
-      case 'referral':
-        return '📋';
-      case 'casestudy':
-        return '📝';
-      case 'documents':
-        return '📎';
-      case 'submission':
-        return '🎉';
-      default:
-        return '✅';
-    }
-  };
-
-  const getBgColor = () => {
-    switch (type) {
-      case 'referral':
-        return 'bg-emerald-50 border-emerald-200';
-      case 'casestudy':
-        return 'bg-purple-50 border-purple-200';
-      case 'documents':
-        return 'bg-cyan-50 border-cyan-200';
-      case 'submission':
-        return 'bg-blue-50 border-blue-200';
-      default:
-        return 'bg-emerald-50 border-emerald-200';
+        return 'bg-green-600 hover:bg-green-500';
     }
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50  animate-in fade-in duration-200">
-      <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 border border-gray-200 animate-in zoom-in duration-300">
-        {/* Close Button */}
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+      <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 border border-gray-200 text-center animate-in fade-in zoom-in duration-300">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full transition"
+          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition"
         >
-          <X className="w-5 h-5 text-gray-400 hover:text-gray-600" />
+          <X className="w-5 h-5" />
         </button>
 
-        {/* Icon */}
-        <div className={`w-20 h-20 bg-gradient-to-br ${getGradient()} rounded-full flex items-center justify-center text-4xl mx-auto shadow-lg border-4 ${getBgColor()}`}>
-          {getEmoji()}
+        <div className={`w-20 h-20 ${getIconColor()} bg-opacity-10 rounded-full flex items-center justify-center text-4xl mx-auto mb-4`}>
+          <CheckCircle className="w-12 h-12" />
         </div>
 
-        {/* Title */}
-        <h2 className="text-2xl font-bold text-gray-800 mt-6 text-center">{title}</h2>
-        
-        {/* Message */}
-        <p className="text-gray-600 text-center mt-2 leading-relaxed">{message}</p>
+        <h3 className="text-xl font-bold text-gray-800">{title}</h3>
+        <p className="text-gray-500 mt-2 text-sm">{message}</p>
 
-        {/* Details */}
-        {details.id && (
-          <div className={`mt-4 p-4 rounded-xl border ${getBgColor()}`}>
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-                {type === 'referral' ? 'Referral ID' : 
-                 type === 'casestudy' ? 'Case Study ID' : 
-                 type === 'submission' ? 'Reference Token' : 'ID'}
-              </span>
-              <span className="font-mono font-bold text-gray-800 text-sm bg-white px-3 py-1 rounded-lg border border-gray-200">
-                {details.id}
-              </span>
-            </div>
+        {details?.id && (
+          <div className="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+            <p className="text-xs text-gray-500 font-medium">Reference ID</p>
+            <p className="font-mono font-bold text-gray-700 text-sm">{details.id}</p>
           </div>
         )}
 
-        {details.documentCount !== undefined && (
-          <div className={`mt-4 p-4 rounded-xl border ${getBgColor()}`}>
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-                Documents Uploaded
-              </span>
-              <span className="font-bold text-gray-800 text-lg">
-                {details.documentCount} file(s)
-              </span>
-            </div>
+        {details?.documentCount !== undefined && details.documentCount > 0 && (
+          <div className="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+            <p className="text-xs text-gray-500 font-medium">Documents Uploaded</p>
+            <p className="font-bold text-gray-700 text-sm">{details.documentCount} file(s)</p>
           </div>
         )}
 
-        {/* Success Checkmark Animation */}
-        <div className="mt-4 flex justify-center">
-          <div className="flex items-center gap-2 text-xs text-gray-500">
-            <Sparkles className="w-3 h-3 text-amber-500" />
-            <span>Saved successfully</span>
-            <Sparkles className="w-3 h-3 text-amber-500" />
-          </div>
-        </div>
-
-        {/* Action Button */}
         <button
-          onClick={onContinue || onClose}
-          className={`mt-6 w-full px-6 py-3 bg-gradient-to-r ${getGradient()} text-white text-sm font-bold uppercase rounded-xl shadow-lg hover:shadow-xl transition transform hover:scale-[1.02] flex items-center justify-center gap-2`}
+          onClick={() => {
+            onContinue();  // ✅ Call the onContinue callback
+            onClose();
+          }}
+          className={`mt-6 px-8 py-3 ${getButtonColor()} text-white text-sm font-bold uppercase rounded-xl shadow-lg hover:shadow-xl transition transform hover:scale-105 w-full`}
         >
-          <Check className="w-4 h-4" />
-          {type === 'submission' ? 'View Dashboard' : 'Continue'}
+          Continue
         </button>
-
-        {/* Footer Text */}
-        <p className="text-[10px] text-gray-400 text-center mt-4">
-          {type === 'submission' 
-            ? 'An email confirmation has been sent to the reporter' 
-            : 'All information has been securely stored'}
-        </p>
       </div>
     </div>
   );

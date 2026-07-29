@@ -1,10 +1,9 @@
 // CaseStudyTab/index.tsx
 import React from 'react';
-import { AlertCircle, User, Shield, Loader, Save } from 'lucide-react';
+import { AlertCircle, User, Shield } from 'lucide-react';
 
 import type { CaseStudyTabErrors, CaseStudyTabState } from '../../types/CaseStudyTab/types';
 import { SaveButton } from '../SaveButton';
-
 
 interface CaseStudyTabProps {
   state: CaseStudyTabState;
@@ -95,36 +94,13 @@ export const CaseStudyTab: React.FC<CaseStudyTabProps> = ({
         </div>
       )}
 
+      {/* ✅ Referral ID is HIDDEN from UI - only used internally */}
+
       <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-              Incident Date <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="date"
-              value={state.incidentDate}
-              onChange={(e) => updateField('incidentDate', e.target.value)}
-              className={`w-full p-3.5 bg-white border rounded-xl text-sm text-gray-700 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition ${
-                errors.incidentDate ? 'border-red-500' : 'border-gray-200'
-              }`}
-            />
-            {errors.incidentDate && <p className="text-xs text-red-500 font-semibold mt-1">⚠️ {errors.incidentDate}</p>}
-          </div>
+        <div className="grid grid-cols-1 gap-6">
+          {/* REMOVED: Incident Date and Incident Time */}
 
           <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-              Incident Time
-            </label>
-            <input
-              type="time"
-              value={state.incidentTime}
-              onChange={(e) => updateField('incidentTime', e.target.value)}
-              className="w-full p-3.5 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition"
-            />
-          </div>
-
-          <div className="md:col-span-2">
             <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
               Incident Description (Abuse, Neglect, or Exploitation) <span className="text-red-500">*</span>
             </label>
@@ -140,7 +116,7 @@ export const CaseStudyTab: React.FC<CaseStudyTabProps> = ({
             {errors.incidentDescription && <p className="text-xs text-red-500 font-semibold mt-1">⚠️ {errors.incidentDescription}</p>}
           </div>
 
-          <div className="md:col-span-2">
+          <div>
             <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
               Incident Location <span className="text-red-500">*</span>
             </label>

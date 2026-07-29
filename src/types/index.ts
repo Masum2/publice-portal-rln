@@ -1,7 +1,20 @@
 // types/index.ts
 
+export interface DocumentFile {
+  id: string;
+  name: string;
+  type: string;
+  uploadedAt: string;
+}
+
+// ✅ Referral - incidentDate এবং incidentTime এখন optional
 export interface Referral {
   id: string;
+  // ✅ Reporting fields - optional (backend এ সেট হবে)
+  reportingDate?: string;
+  reportingTime?: string;
+  reportingMethod?: string;
+  reportingSource?: string;
   reporterFirstName: string;
   reporterLastName: string;
   relationship: string;
@@ -27,12 +40,15 @@ export interface Referral {
   victimName: string;
   victimAge: string;
   victimAddress: string;
-  incidentDate: string;
-  incidentTime: string;
+  // Case Study fields
+  // ✅ incidentDate এবং incidentTime optional
+  incidentDate?: string;
+  incidentTime?: string;
   incidentDescription: string;
   incidentLocation: string;
   abuseDuration: string;
   lastSeen: string;
+  shortTermMemoryLoss: boolean | null;
   hasCausedHarm: boolean;
   harmDescription: string;
   healthFunctioning: string;
@@ -52,7 +68,8 @@ export interface Referral {
   otherReportsDescription: string;
   lawEnforcementInvolved: boolean;
   lawEnforcementDescription: string;
-  status: string;
+  // Status fields
+  status: 'Draft' | 'Submitted' | 'Under Review' | 'Accepted' | 'Rejected';
   submittedAt: string;
   reviewStartedAt: string | null;
   acceptedAt: string | null;
@@ -61,15 +78,8 @@ export interface Referral {
   documents: DocumentFile[];
 }
 
-export interface DocumentFile {
-  id: string;
-  name: string;
-  type: string;
-  uploadedAt: string;
-}
-
+// ✅ CreateReferralRequest - backend এ পাঠানোর জন্য
 export interface CreateReferralRequest {
-  // Required fields
   reporterFirstName: string;
   reporterLastName: string;
   reporterAddress: string;
@@ -92,25 +102,23 @@ export interface CreateReferralRequest {
   reportingSource: number;
   isAdultAbuseBeingReported: boolean;
   comments: string;
-  
-  // Optional fields with default values
-  aps_ClientId?: number;
-  reporterGenderLookupId?: number;
-  reporterStateLookupId?: number;
-  apS_ReporterRelationshipLookupId?: number;
-  stateLookupId?: number;
-
-  countyLookupId?: number;
-  submitById?: number;
-  isSubmitted?: boolean;
-  decision?: number;
-  preferredInformingMethod?: number;
-  nickName?: string;
+  aps_ClientId: number;
+  reporterGenderLookupId: number;
+  reporterStateLookupId: number;
+  apS_ReporterRelationshipLookupId: number;
+  stateLookupId: number;
+  countyLookupId: number;
+  submitById: number;
+  isSubmitted: boolean;
+  decision: number;
+  preferredInformingMethod: number;
+  nickName: string;
 }
 
+// ✅ CreateCaseStudyRequest - incidentDate এবং incidentTime optional
 export interface CreateCaseStudyRequest {
-  incidentDate: string;
-  incidentTime: string;
+  incidentDate?: string;
+  incidentTime?: string;
   incidentLocation: string;
   incidentDesc: string;
   abuseNeglectOrExploitationDesc: string;
@@ -135,11 +143,9 @@ export interface CreateCaseStudyRequest {
   othersReportersDesc: string;
   hasPoliceInvoled: boolean;
   lawEnforementDesc: string;
-  apS_ReferralId?: number;
-  directionsToCurrentLocation?: string;
-  isSubmitted?: boolean;
-  decision?: number;
-    publicReferralId?: number;
+  directionsToCurrentLocation: string;
+  isSubmitted: boolean;
+  publicReferralId: number;
 }
 
 export interface ApiResponse<T> {

@@ -1,7 +1,7 @@
 // CaseStudyTab/types.ts
+
 export interface CaseStudyTabState {
-  incidentDate: string;
-  incidentTime: string;
+  // ❌ REMOVED: incidentDate, incidentTime
   incidentDescription: string;
   incidentLocation: string;
   abuseDuration: string;
@@ -29,7 +29,7 @@ export interface CaseStudyTabState {
 }
 
 export interface CaseStudyTabErrors {
-  incidentDate?: string;
+  // ❌ REMOVED: incidentDate
   incidentDescription?: string;
   incidentLocation?: string;
 }
