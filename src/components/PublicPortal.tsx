@@ -159,25 +159,68 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ onAddReferral }) => 
   };
 
   // --- File Handler ---
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>): void => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      if (file.size > 10 * 1024 * 1024) {
-        alert('Max file size allowed is 10MB');
-        return;
-      }
-      setDocs([
-        ...docs,
-        {
-          id: 'doc-' + Date.now(),
-          name: file.name,
-          type: 'Supporting Doc',
-          uploadedAt: new Date().toLocaleDateString(),
-        },
-      ]);
-    }
-  };
+// --- File Handler ---
+const handleFileUpload = (fileData: Omit<DocumentFile, 'id' | 'uploadedAt'>): void => {
+  setDocs([
+    ...docs,
+    {
+      id: 'doc-' + Date.now(),
+      ...fileData,
+      uploadedAt: new Date().toLocaleDateString(),
+    },
+  ]);
+};
 
+// --- Save Documents Tab & API Call ---
+const saveDocumentsTab = async (): Promise<void> => {
+  if (!referralId) {
+    alert('⚠️ Please save the Referral Information tab first.');
+    return;
+  }
+
+  if (docs.length === 0) {
+    alert('⚠️ Please add at least one document before saving.');
+    return;
+  }
+
+  try {
+    // প্রতিটি ডকুমেন্টের জন্য FormData তৈরি করে ব্যাকএন্ডে পাঠাতে হবে (Multi-part form data)
+    for (const doc of docs) {
+      const formData = new FormData();
+      formData.append('PublicReferralId', referralId.toString());
+      formData.append('DocumentType', doc.documentType.toString());
+      formData.append('DocumentName', doc.documentName);
+      formData.append('FileName', doc.fileName);
+      formData.append('DocumentDate', doc.documentDate);
+      if (doc.comments) formData.append('Comments', doc.comments);
+      formData.append('File', doc.file); // IFormFile এর জন্য আসল File অবজেক্ট
+
+      // উদাহরণ API কল (আপনার hook বা service অনুযায়ী পরিবর্তন করুন)
+      // await submitDocument(formData);
+      console.log('📤 Submitting Document Payload:', {
+        PublicReferralId: referralId,
+        DocumentType: doc.documentType,
+        DocumentName: doc.documentName,
+        FileName: doc.fileName,
+        DocumentDate: doc.documentDate,
+        Comments: doc.comments,
+        File: doc.file.name
+      });
+    }
+
+    setSavedTabs({ ...savedTabs, documents: true });
+    
+    showSuccessModal(
+      'documents',
+      '📎 Documents Saved Successfully!',
+      `${docs.length} document(s) have been successfully uploaded and saved.`,
+      { documentCount: docs.length }
+    );
+  } catch (error) {
+    console.error('Save documents error:', error);
+    alert(`❌ Failed to save documents: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+};
   const removeFile = (id: string): void => {
     setDocs(docs.filter((d) => d.id !== id));
   };
@@ -425,16 +468,7 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ onAddReferral }) => 
     }
   };
 
-  const saveDocumentsTab = (): void => {
-    setSavedTabs({ ...savedTabs, documents: true });
-    
-    showSuccessModal(
-      'documents',
-      '📎 Documents Saved Successfully!',
-      `${docs.length} document(s) have been successfully uploaded and saved.`,
-      { documentCount: docs.length }
-    );
-  };
+
 
   const handleSubmit = async (): Promise<void> => {
     if (!isAgreed) {
@@ -594,14 +628,15 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ onAddReferral }) => 
                 />
               )}
               
-              {activeTab === 'documents' && (
-                <DocumentsTab
-                  docs={docs}
-                  onFileUpload={handleFileUpload}
-                  onRemoveFile={removeFile}
-                  onSave={saveDocumentsTab}
-                />
-              )}
+            {activeTab === 'documents' && (
+  <DocumentsTab
+    docs={docs}
+    onFileUpload={handleFileUpload}
+    onRemoveFile={removeFile}
+    onSave={saveDocumentsTab}
+    isReferralSaved={savedTabs.referral}
+  />
+)}
             </div>
           </div>
         </div>
