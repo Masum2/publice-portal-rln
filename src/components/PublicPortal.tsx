@@ -332,41 +332,37 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ onAddReferral }) => 
         
         setSavedTabs({ ...savedTabs, referral: true });
         
-   // PublicPortal/index.tsx - saveReferralTab ফাংশনের ভিতর
-
-const updatedReferral: Referral = {
-  id: String(newReferralId || ''),
-  ...referralState,
-  ...caseStudyState,
-  // ✅ reportingDate, reportingTime, reportingMethod, reportingSource বাদ
-  // ✅ incidentDate, incidentTime বাদ (এগুলো backend এ সেট হবে)
-  status: 'Draft',
-  submittedAt: new Date().toISOString(),
-  reviewStartedAt: null,
-  acceptedAt: null,
-  rejectedAt: null,
-  linkedClientId: null,
-  documents: docs,
-  hasCausedHarm: caseStudyState.hasCausedHarm || false,
-  harmDescription: caseStudyState.harmDescription || '',
-  healthFunctioning: caseStudyState.healthFunctioning || '',
-  inDangerOfDeath: caseStudyState.inDangerOfDeath || false,
-  deathDescription: caseStudyState.deathDescription || '',
-  atRiskOfHarm: caseStudyState.atRiskOfHarm || false,
-  riskDescription: caseStudyState.riskDescription || '',
-  witnessedIncident: caseStudyState.witnessedIncident || false,
-  howBecameAware: caseStudyState.howBecameAware || '',
-  adultKnowsReport: caseStudyState.adultKnowsReport || false,
-  adultReaction: caseStudyState.adultReaction || '',
-  familyKnowsReport: caseStudyState.familyKnowsReport || false,
-  familyMembersKnow: caseStudyState.familyMembersKnow || '',
-  involvedWithDSS: caseStudyState.involvedWithDSS || false,
-  dssDescription: caseStudyState.dssDescription || '',
-  otherReports: caseStudyState.otherReports || false,
-  otherReportsDescription: caseStudyState.otherReportsDescription || '',
-  lawEnforcementInvolved: caseStudyState.lawEnforcementInvolved || false,
-  lawEnforcementDescription: caseStudyState.lawEnforcementDescription || '',
-};
+        const updatedReferral: Referral = {
+          id: String(newReferralId || ''),
+          ...referralState,
+          ...caseStudyState,
+          status: 'Draft',
+          submittedAt: new Date().toISOString(),
+          reviewStartedAt: null,
+          acceptedAt: null,
+          rejectedAt: null,
+          linkedClientId: null,
+          documents: docs,
+          hasCausedHarm: caseStudyState.hasCausedHarm || false,
+          harmDescription: caseStudyState.harmDescription || '',
+          healthFunctioning: caseStudyState.healthFunctioning || '',
+          inDangerOfDeath: caseStudyState.inDangerOfDeath || false,
+          deathDescription: caseStudyState.deathDescription || '',
+          atRiskOfHarm: caseStudyState.atRiskOfHarm || false,
+          riskDescription: caseStudyState.riskDescription || '',
+          witnessedIncident: caseStudyState.witnessedIncident || false,
+          howBecameAware: caseStudyState.howBecameAware || '',
+          adultKnowsReport: caseStudyState.adultKnowsReport || false,
+          adultReaction: caseStudyState.adultReaction || '',
+          familyKnowsReport: caseStudyState.familyKnowsReport || false,
+          familyMembersKnow: caseStudyState.familyMembersKnow || '',
+          involvedWithDSS: caseStudyState.involvedWithDSS || false,
+          dssDescription: caseStudyState.dssDescription || '',
+          otherReports: caseStudyState.otherReports || false,
+          otherReportsDescription: caseStudyState.otherReportsDescription || '',
+          lawEnforcementInvolved: caseStudyState.lawEnforcementInvolved || false,
+          lawEnforcementDescription: caseStudyState.lawEnforcementDescription || '',
+        };
         
         onAddReferral(updatedReferral);
 
