@@ -154,3 +154,13 @@ export interface ApiResponse<T> {
   message?: string;
   errors?: string[];
 }
+export interface DocumentFile {
+  id: string;
+  file: File; // আসল File অবজেক্ট সাবমিটের জন্য
+  fileName: string;
+  documentName: string;
+  documentType: number; // Enum বা Number (আপনার DTO অনুযায়ী)
+  documentDate: string;
+  comments?: string;
+  uploadedAt: string;
+}
