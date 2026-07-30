@@ -94,9 +94,9 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ onAddReferral }) => 
     incidentZip: '',
     incidentCommunity: '',
     incidentComments: '',
-    victimName: '',
-    victimAge: '',
-    victimAddress: '',
+    // victimName: '',
+    // victimAge: '',
+    // victimAddress: '',
   });
 
   const [caseStudyState, setCaseStudyState] = useState({
@@ -190,7 +190,7 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ onAddReferral }) => 
     if (!referralState.reporterPhone) newErrors.reporterPhone = 'Phone required';
     if (!referralState.reporterEmail) newErrors.reporterEmail = 'Email required';
     if (!referralState.incidentAddress) newErrors.incidentAddress = 'Incident address required';
-    if (!referralState.victimName) newErrors.victimName = 'Victim name required';
+    // if (!referralState.victimName) newErrors.victimName = 'Victim name required';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -632,7 +632,7 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ onAddReferral }) => 
         setIsAgreed={setIsAgreed}
         error={error}
         reporterName={`${referralState.reporterFirstName} ${referralState.reporterLastName}`}
-        victimName={referralState.victimName}
+        // victimName={referralState.victimName}
         incidentDate={getCurrentDate()}
         documentCount={docs.length}
         savedTabs={savedTabs}

@@ -99,7 +99,7 @@ export const ReferralTab: React.FC<ReferralTabProps> = ({
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* ===== VICTIM INFORMATION - TOP SECTION ===== */}
-        <div className="md:col-span-2">
+        {/* <div className="md:col-span-2">
           <h3 className="text-sm font-bold text-purple-600 uppercase tracking-wider flex items-center gap-2">
             <User className="w-4 h-4" />
             Victim / Client Information
@@ -146,7 +146,7 @@ export const ReferralTab: React.FC<ReferralTabProps> = ({
             className="w-full p-3.5 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition resize-none"
             placeholder="Victim's address"
           />
-        </div>
+        </div> */}
 
         {/* ===== REPORTER INFORMATION - AFTER VICTIM ===== */}
         <div className="md:col-span-2 border-t border-gray-200 pt-6">

@@ -1,6 +1,6 @@
 // SubmitModal/index.tsx
 import React from 'react';
-import { AlertCircle, Send, Loader, Check } from 'lucide-react';
+import { AlertCircle, Send, Loader,  } from 'lucide-react';
 
 interface SubmitModalProps {
   isOpen: boolean;
@@ -11,7 +11,7 @@ interface SubmitModalProps {
   setIsAgreed: (value: boolean) => void;
   error: string | null;
   reporterName: string;
-  victimName: string;
+  // victimName: string;
   incidentDate: string;
   documentCount: number;
   savedTabs: { [key: string]: boolean };
@@ -26,7 +26,7 @@ export const SubmitModal: React.FC<SubmitModalProps> = ({
   setIsAgreed,
   error,
   reporterName,
-  victimName,
+  // victimName,
   incidentDate,
   documentCount,
   savedTabs,
@@ -51,10 +51,10 @@ export const SubmitModal: React.FC<SubmitModalProps> = ({
                 <span className="text-gray-500">Reporter:</span>
                 <p className="font-medium text-gray-800">{reporterName || 'Not set'}</p>
               </div>
-              <div>
+              {/* <div>
                 <span className="text-gray-500">Victim:</span>
                 <p className="font-medium text-gray-800">{victimName || 'Not set'}</p>
-              </div>
+              </div> */}
               <div>
                 <span className="text-gray-500">Incident Date:</span>
                 <p className="font-medium text-gray-800">{incidentDate || 'Not set'}</p>

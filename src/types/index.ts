@@ -37,9 +37,9 @@ export interface Referral {
   incidentZip: string;
   incidentCommunity: string;
   incidentComments: string;
-  victimName: string;
-  victimAge: string;
-  victimAddress: string;
+  // victimName: string;
+  // victimAge: string;
+  // victimAddress: string;
   // Case Study fields
   // ✅ incidentDate এবং incidentTime optional
   incidentDate?: string;

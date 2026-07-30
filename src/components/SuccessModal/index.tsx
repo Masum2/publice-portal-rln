@@ -73,12 +73,7 @@ export const SuccessModal: React.FC<SuccessModalProps> = ({
         <h3 className="text-xl font-bold text-gray-800">{title}</h3>
         <p className="text-gray-500 mt-2 text-sm">{message}</p>
 
-        {details?.id && (
-          <div className="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
-            <p className="text-xs text-gray-500 font-medium">Reference ID</p>
-            <p className="font-mono font-bold text-gray-700 text-sm">{details.id}</p>
-          </div>
-        )}
+        
 
         {details?.documentCount !== undefined && details.documentCount > 0 && (
           <div className="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200">

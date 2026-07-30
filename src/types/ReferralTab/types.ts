@@ -24,9 +24,9 @@ export interface ReferralTabState {
   incidentZip: string;
   incidentCommunity: string;
   incidentComments: string;
-  victimName: string;
-  victimAge: string;
-  victimAddress: string;
+  // victimName: string;
+  // victimAge: string;
+  // victimAddress: string;
 }
 
 export interface ReferralTabErrors {
@@ -35,5 +35,5 @@ export interface ReferralTabErrors {
   reporterPhone?: string;
   reporterEmail?: string;
   incidentAddress?: string;
-  victimName?: string;
+  // victimName?: string;
 }
