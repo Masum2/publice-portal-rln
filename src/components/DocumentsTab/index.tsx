@@ -1,6 +1,8 @@
 // DocumentsTab/index.tsx
+
 import React, { useState } from 'react';
 import type { DocumentFile } from '../../types';
+import { api } from '../../services/api';
 import { SaveButton } from '../SaveButton';
 
 interface DocumentsTabProps {
@@ -9,6 +11,8 @@ interface DocumentsTabProps {
   onRemoveFile: (id: string) => void;
   onSave: () => void;
   isReferralSaved: boolean;
+  publicReferralId?: number;
+  referralId?: number;
 }
 
 export const DocumentsTab: React.FC<DocumentsTabProps> = ({
@@ -17,12 +21,26 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
   onRemoveFile,
   onSave,
   isReferralSaved,
+  publicReferralId,
+  referralId,
 }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [documentName, setDocumentName] = useState('');
   const [documentType, setDocumentType] = useState<number>(1);
   const [documentDate, setDocumentDate] = useState(new Date().toISOString().split('T')[0]);
   const [comments, setComments] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
+
+  // Use either publicReferralId or referralId
+  const effectiveReferralId = publicReferralId || referralId || 0;
+
+  console.log('📌 DocumentsTab Props:', {
+    publicReferralId,
+    referralId,
+    effectiveReferralId,
+    isReferralSaved,
+    docsCount: docs.length
+  });
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -32,7 +50,6 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
         return;
       }
       setSelectedFile(file);
-      // ডিফল্টভাবে ফাইলের নাম ডকুমেন্ট নেম হিসেবে সেট করে দিতে পারেন
       if (!documentName) {
         setDocumentName(file.name.split('.')[0]);
       }
@@ -65,10 +82,57 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
       type: ''
     });
 
-    // ফর্ম রিসেট
+    // Reset form
     setSelectedFile(null);
     setDocumentName('');
     setComments('');
+  };
+
+  const handleSaveDocuments = async () => {
+    if (!isReferralSaved) {
+      alert('⚠️ Please save the Referral Info tab first before uploading documents.');
+      return;
+    }
+
+    if (!effectiveReferralId) {
+      alert('⚠️ Referral ID is required. Please save the Referral Info tab first.');
+      return;
+    }
+
+    if (docs.length === 0) {
+      alert('⚠️ No documents to upload.');
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      console.log('📤 Starting document upload for Referral ID:', effectiveReferralId);
+      console.log('📄 Documents to upload:', docs.length);
+
+      // ✅ একাধিক ডকুমেন্ট আপলোড - একই endpoint ব্যবহার করে
+      const response = await api.uploadMultiplePortalDocuments(docs, effectiveReferralId);
+      
+      console.log('✅ Upload Response:', response);
+
+      if (response.isSuccess) {
+        alert(`✅ All ${docs.length} documents uploaded successfully!`);
+        onSave();
+      } else {
+        // কিছু ডকুমেন্ট আপলোড হয়েছে, কিছু হয়নি
+        if (response.data?.uploadedCount > 0) {
+          alert(`⚠️ ${response.data.uploadedCount} out of ${docs.length} documents uploaded successfully. Please try again for the remaining documents.`);
+        } else {
+          throw new Error(response.message || 'Failed to upload documents');
+        }
+      }
+    } catch (error: any) {
+      console.error('❌ Upload Error:', error);
+      
+      // যদি সব ডকুমেন্ট আপলোড ফেইল করে
+      alert(`❌ Failed to upload documents: ${error.message || 'Unknown error'}`);
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   return (
@@ -77,6 +141,12 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
         {!isReferralSaved && (
           <div className="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-xl text-sm">
             ⚠️ Please save the <strong>Referral Info</strong> tab first before uploading documents (Required for PublicReferralId).
+          </div>
+        )}
+
+        {effectiveReferralId > 0 && (
+          <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-xl text-sm">
+            ✅ Ready to upload documents
           </div>
         )}
 
@@ -193,7 +263,10 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
       </div>
 
       <div className="mt-8 pt-6 border-t border-gray-200 flex justify-end">
-        <SaveButton onSave={onSave} label="Save Documents" />
+        <SaveButton 
+          onSave={handleSaveDocuments} 
+          label={isUploading ? "Uploading..." : "Save Documents"} 
+        />
       </div>
     </>
   );

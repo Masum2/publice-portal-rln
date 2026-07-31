@@ -1,11 +1,6 @@
 // types/index.ts
 
-export interface DocumentFile {
-  id: string;
-  name: string;
-  type: string;
-  uploadedAt: string;
-}
+
 
 // ✅ Referral - incidentDate এবং incidentTime এখন optional
 export interface Referral {
@@ -154,13 +149,28 @@ export interface ApiResponse<T> {
   message?: string;
   errors?: string[];
 }
+// types.ts
+
 export interface DocumentFile {
   id: string;
-  file: File; // আসল File অবজেক্ট সাবমিটের জন্য
+  file: File;
   fileName: string;
   documentName: string;
-  documentType: number; // Enum বা Number (আপনার DTO অনুযায়ী)
+  documentType: number;
   documentDate: string;
   comments?: string;
   uploadedAt: string;
+  name: string;
+  type: string;
+}
+
+export interface CreatePortalDocumentRequest {
+  publicReferralId: number;
+  documentType: number;
+  comments: string;
+  documentDate: string;
+  fileType: string;
+  fileName: string;
+  documentName: string;
+  fileBytes: string;
 }

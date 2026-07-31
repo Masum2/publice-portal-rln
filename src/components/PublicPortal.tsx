@@ -1,4 +1,5 @@
 // PublicPortal/index.tsx
+
 import React, { useState } from 'react';
 import { 
   User, 
@@ -23,7 +24,6 @@ interface PublicPortalProps {
 
 type TabType = 'referral' | 'casestudy' | 'documents';
 
-// ✅ SuccessModalState টাইপ ঠিক করা হয়েছে
 interface SuccessModalState {
   isOpen: boolean;
   type: 'referral' | 'casestudy' | 'documents' | 'submission';
@@ -42,7 +42,6 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ onAddReferral }) => 
   const [generatedId, setGeneratedId] = useState('');
   const [showSubmitModal, setShowSubmitModal] = useState(false);
   
-  // ✅ SuccessModal state ঠিক করা হয়েছে
   const [successModal, setSuccessModal] = useState<SuccessModalState>({
     isOpen: false,
     type: 'referral',
@@ -94,9 +93,6 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ onAddReferral }) => 
     incidentZip: '',
     incidentCommunity: '',
     incidentComments: '',
-    // victimName: '',
-    // victimAge: '',
-    // victimAddress: '',
   });
 
   const [caseStudyState, setCaseStudyState] = useState({
@@ -136,7 +132,6 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ onAddReferral }) => 
   });
 
   // --- Success Modal Helpers ---
-  // ✅ showSuccessModal টাইপ ঠিক করা হয়েছে
   const showSuccessModal = (
     type: SuccessModalState['type'],
     title: string,
@@ -159,68 +154,45 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ onAddReferral }) => 
   };
 
   // --- File Handler ---
-// --- File Handler ---
-const handleFileUpload = (fileData: Omit<DocumentFile, 'id' | 'uploadedAt'>): void => {
-  setDocs([
-    ...docs,
-    {
-      id: 'doc-' + Date.now(),
-      ...fileData,
-      uploadedAt: new Date().toLocaleDateString(),
-    },
-  ]);
-};
+  const handleFileUpload = (fileData: Omit<DocumentFile, 'id' | 'uploadedAt'>): void => {
+    setDocs([
+      ...docs,
+      {
+        id: 'doc-' + Date.now(),
+        ...fileData,
+        uploadedAt: new Date().toLocaleDateString(),
+      },
+    ]);
+  };
 
-// --- Save Documents Tab & API Call ---
-const saveDocumentsTab = async (): Promise<void> => {
-  if (!referralId) {
-    alert('⚠️ Please save the Referral Information tab first.');
-    return;
-  }
-
-  if (docs.length === 0) {
-    alert('⚠️ Please add at least one document before saving.');
-    return;
-  }
-
-  try {
-    // প্রতিটি ডকুমেন্টের জন্য FormData তৈরি করে ব্যাকএন্ডে পাঠাতে হবে (Multi-part form data)
-    for (const doc of docs) {
-      const formData = new FormData();
-      formData.append('PublicReferralId', referralId.toString());
-      formData.append('DocumentType', doc.documentType.toString());
-      formData.append('DocumentName', doc.documentName);
-      formData.append('FileName', doc.fileName);
-      formData.append('DocumentDate', doc.documentDate);
-      if (doc.comments) formData.append('Comments', doc.comments);
-      formData.append('File', doc.file); // IFormFile এর জন্য আসল File অবজেক্ট
-
-      // উদাহরণ API কল (আপনার hook বা service অনুযায়ী পরিবর্তন করুন)
-      // await submitDocument(formData);
-      console.log('📤 Submitting Document Payload:', {
-        PublicReferralId: referralId,
-        DocumentType: doc.documentType,
-        DocumentName: doc.documentName,
-        FileName: doc.fileName,
-        DocumentDate: doc.documentDate,
-        Comments: doc.comments,
-        File: doc.file.name
-      });
+  // --- Save Documents Tab ---
+  const saveDocumentsTab = async (): Promise<void> => {
+    if (!referralId) {
+      alert('⚠️ Please save the Referral Information tab first.');
+      return;
     }
 
-    setSavedTabs({ ...savedTabs, documents: true });
-    
-    showSuccessModal(
-      'documents',
-      '📎 Documents Saved Successfully!',
-      `${docs.length} document(s) have been successfully uploaded and saved.`,
-      { documentCount: docs.length }
-    );
-  } catch (error) {
-    console.error('Save documents error:', error);
-    alert(`❌ Failed to save documents: ${error instanceof Error ? error.message : 'Unknown error'}`);
-  }
-};
+    if (docs.length === 0) {
+      alert('⚠️ Please add at least one document before saving.');
+      return;
+    }
+
+    try {
+      // The actual upload will be handled in DocumentsTab
+      setSavedTabs({ ...savedTabs, documents: true });
+      
+      showSuccessModal(
+        'documents',
+        '📎 Documents Saved Successfully!',
+        `${docs.length} document(s) have been successfully uploaded and saved.`,
+        { documentCount: docs.length }
+      );
+    } catch (error) {
+      console.error('Save documents error:', error);
+      alert(`❌ Failed to save documents: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  };
+
   const removeFile = (id: string): void => {
     setDocs(docs.filter((d) => d.id !== id));
   };
@@ -233,7 +205,6 @@ const saveDocumentsTab = async (): Promise<void> => {
     if (!referralState.reporterPhone) newErrors.reporterPhone = 'Phone required';
     if (!referralState.reporterEmail) newErrors.reporterEmail = 'Email required';
     if (!referralState.incidentAddress) newErrors.incidentAddress = 'Incident address required';
-    // if (!referralState.victimName) newErrors.victimName = 'Victim name required';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -358,12 +329,21 @@ const saveDocumentsTab = async (): Promise<void> => {
       if (response && response.isSuccess) {
         let newReferralId: number | null = null;
         
-        if (typeof response.data === 'number' || typeof response.data === 'string') {
-          newReferralId = parseInt(response.data as string);
-        } else if (response.data && typeof response.data === 'object' && 'id' in response.data) {
-          newReferralId = parseInt((response.data as { id: string }).id);
-        } else if (response.data && typeof response.data === 'object' && 'Data' in response.data) {
-          newReferralId = parseInt(String((response.data as { Data: string | number }).Data), 10);
+        // Extract ID from various response formats
+        if (typeof response.data === 'number') {
+          newReferralId = response.data;
+        } else if (typeof response.data === 'string') {
+          newReferralId = parseInt(response.data);
+        } else if (response.data && typeof response.data === 'object') {
+          if ('id' in response.data) {
+            newReferralId = parseInt(String((response.data as any).id));
+          } else if ('Data' in response.data) {
+            newReferralId = parseInt(String((response.data as any).Data));
+          } else if ('referralId' in response.data) {
+            newReferralId = parseInt(String((response.data as any).referralId));
+          } else if ('publicReferralId' in response.data) {
+            newReferralId = parseInt(String((response.data as any).publicReferralId));
+          }
         }
         
         console.log('✅ Extracted Referral ID:', newReferralId);
@@ -371,6 +351,8 @@ const saveDocumentsTab = async (): Promise<void> => {
         if (newReferralId) {
           setReferralId(newReferralId);
           console.log('✅ Referral ID set to state:', newReferralId);
+        } else {
+          throw new Error('Could not extract Referral ID from response');
         }
         
         setSavedTabs({ ...savedTabs, referral: true });
@@ -467,8 +449,6 @@ const saveDocumentsTab = async (): Promise<void> => {
       alert(`❌ Failed to save case study: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
-
-
 
   const handleSubmit = async (): Promise<void> => {
     if (!isAgreed) {
@@ -628,13 +608,17 @@ const saveDocumentsTab = async (): Promise<void> => {
                 />
               )}
               
-            {activeTab === 'documents' && (
+
+
+{activeTab === 'documents' && (
   <DocumentsTab
     docs={docs}
     onFileUpload={handleFileUpload}
     onRemoveFile={removeFile}
     onSave={saveDocumentsTab}
     isReferralSaved={savedTabs.referral}
+    publicReferralId={referralId || undefined}
+    referralId={referralId || undefined}
   />
 )}
             </div>
@@ -667,7 +651,6 @@ const saveDocumentsTab = async (): Promise<void> => {
         setIsAgreed={setIsAgreed}
         error={error}
         reporterName={`${referralState.reporterFirstName} ${referralState.reporterLastName}`}
-        // victimName={referralState.victimName}
         incidentDate={getCurrentDate()}
         documentCount={docs.length}
         savedTabs={savedTabs}

@@ -4,10 +4,9 @@ import type {
   CreateReferralRequest, 
   CreateCaseStudyRequest,
   ApiResponse, 
-  Referral
+  Referral,
+  DocumentFile
 } from '../types';
-
-
 
 const API_CONFIG = {
   headers: {
@@ -18,7 +17,6 @@ const API_CONFIG = {
 
 // API রেসপন্স অ্যাডাপ্টার
 const adaptApiResponse = <T>(response: any): ApiResponse<T> => {
-  // যদি আপনার API রেসপন্সে Data, Status, Message থাকে
   if (response.Data !== undefined && response.Status !== undefined) {
     return {
       isSuccess: response.Status >= 200 && response.Status < 300,
@@ -28,12 +26,10 @@ const adaptApiResponse = <T>(response: any): ApiResponse<T> => {
     };
   }
   
-  // যদি আপনার API রেসপন্সে isSuccess থাকে
   if (response.isSuccess !== undefined) {
     return response;
   }
   
-  // ডিফল্ট
   return {
     isSuccess: true,
     data: response,
@@ -50,10 +46,6 @@ const handleApiCall = async <T>(
     console.log('📤 REQUEST DETAILS:');
     console.log('URL:', url);
     console.log('Method:', options?.method || 'GET');
-    console.log('Headers:', {
-      ...API_CONFIG.headers,
-      ...options?.headers,
-    });
     if (options?.body) {
       console.log('Body:', options.body);
     }
@@ -68,23 +60,15 @@ const handleApiCall = async <T>(
       },
     });
 
-    console.log('═══════════════════════════════════════');
-    console.log('📥 RESPONSE DETAILS:');
-    console.log('Status:', response.status);
-    console.log('Status Text:', response.statusText);
-    console.log('Headers:', [...response.headers]);
-    console.log('═══════════════════════════════════════');
+    console.log('📥 RESPONSE Status:', response.status);
 
-    // প্রথমে text হিসেবে পড়ুন
     const responseText = await response.text();
-    console.log('📄 Raw Response (first 500 chars):', responseText.substring(0, 500));
+    console.log('📄 Raw Response:', responseText.substring(0, 500));
 
-    // যদি response খালি হয়
     if (!responseText || responseText.trim() === '') {
       throw new Error('Server returned empty response');
     }
 
-    // চেক করুন response টি HTML কিনা
     const isHtml = responseText.trim().startsWith('<!DOCTYPE') || 
                    responseText.trim().startsWith('<html') ||
                    responseText.includes('Microsoft.') ||
@@ -93,65 +77,26 @@ const handleApiCall = async <T>(
 
     if (isHtml) {
       console.error('❌ Server returned HTML instead of JSON');
-      console.error('Full HTML Response:', responseText);
-      
-      let errorMessage = 'Server returned HTML instead of JSON.\n\n';
-      
-      const titleMatch = responseText.match(/<title>(.*?)<\/title>/);
-      if (titleMatch) {
-        errorMessage += `Error: ${titleMatch[1]}\n\n`;
-      }
-      
-      const h1Match = responseText.match(/<h1>(.*?)<\/h1>/);
-      if (h1Match) {
-        errorMessage += `Details: ${h1Match[1]}\n\n`;
-      }
-      
-      errorMessage += `This usually means:\n`;
-      errorMessage += `1. The endpoint URL might be wrong\n`;
-      errorMessage += `2. Server is returning an error page\n`;
-      errorMessage += `3. Authentication is required\n`;
-      errorMessage += `4. Server-side error occurred\n\n`;
-      errorMessage += `Response preview: ${responseText.substring(0, 300)}...`;
-      
-      throw new Error(errorMessage);
+      throw new Error('Server returned HTML instead of JSON');
     }
 
-    // JSON parse করার চেষ্টা করুন
     let result;
     try {
       result = JSON.parse(responseText);
       console.log('✅ Parsed JSON Response:', result);
     } catch (parseError) {
       console.error('❌ JSON Parse Error:', parseError);
-      throw new Error(`Invalid JSON response from server: ${responseText.substring(0, 100)}...`);
+      throw new Error(`Invalid JSON response from server`);
     }
 
-    // যদি response.ok না হয়
     if (!response.ok) {
-      const errorMsg = result.message || result.Message || result.title || `HTTP ${response.status}: ${response.statusText}`;
+      const errorMsg = result.message || result.Message || result.title || `HTTP ${response.status}`;
       throw new Error(errorMsg);
     }
 
-    // API রেসপন্স অ্যাডাপ্ট করুন
-    const adaptedResponse = adaptApiResponse<T>(result);
-    console.log('✅ Adapted Response:', adaptedResponse);
-    
-    return adaptedResponse;
+    return adaptApiResponse<T>(result);
   } catch (error) {
     console.error('❌ API Call Error:', error);
-    
-    if (error instanceof TypeError && error.message === 'Failed to fetch') {
-      throw new Error(
-        '❌ Network Error: Unable to connect to server.\n' +
-        'Please check:\n' +
-        '1. Backend is running on https://localhost:5001\n' +
-        '2. Proxy is configured in vite.config.js\n' +
-        '3. CORS is properly configured in backend\n' +
-        '4. No firewall blocking the connection'
-      );
-    }
-    
     throw error;
   }
 };
@@ -160,7 +105,6 @@ export const api = {
   // Create Referral
   createReferral: async (data: CreateReferralRequest): Promise<ApiResponse<Referral>> => {
     console.log('📤 Sending referral data:', JSON.stringify(data, null, 2));
-    
     const url = `/beratenApi/aps/public-referrals/create`;
     return handleApiCall<Referral>(url, {
       method: 'POST',
@@ -171,8 +115,6 @@ export const api = {
   // Create Case Study
   createCaseStudy: async (data: CreateCaseStudyRequest): Promise<ApiResponse<any>> => {
     console.log('📤 Sending case study data:', JSON.stringify(data, null, 2));
-    
-    // URL আপডেট করা হয়েছে
     const url = `/beratenApi/aps/public-case-studies/create`;
     return handleApiCall<any>(url, {
       method: 'POST',
@@ -180,24 +122,102 @@ export const api = {
     });
   },
 
-  // Get Lookups
-  getStates: async (): Promise<ApiResponse<any[]>> => {
-    const url = `/beratenApi/lookups/states`;
-    return handleApiCall<any[]>(url);
+  // ✅ ডকুমেন্ট আপলোড - FormData সহ (একক বা একাধিক)
+  uploadPortalDocument: async (doc: DocumentFile, publicReferralId: number): Promise<ApiResponse<any>> => {
+    console.log('📤 Uploading document:', {
+      publicReferralId,
+      documentName: doc.documentName,
+      fileName: doc.fileName,
+      fileSize: doc.file.size,
+      fileType: doc.file.type
+    });
+
+    const formData = new FormData();
+    formData.append('PublicReferralId', String(publicReferralId));
+    formData.append('DocumentType', String(doc.documentType || 1));
+    formData.append('Comments', doc.comments || '');
+    formData.append('DocumentDate', doc.documentDate ? new Date(doc.documentDate).toISOString() : new Date().toISOString());
+    formData.append('FileName', doc.fileName || doc.file.name);
+    formData.append('DocumentName', doc.documentName || 'Document');
+    formData.append('FileType', doc.file.type || 'application/octet-stream');
+    formData.append('File', doc.file);
+
+    const url = `/beratenApi/aps/public-portal-documents/create`;
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        body: formData,
+        // ❌ Content-Type header set করবেন না - browser নিজে set করে
+      });
+
+      console.log('📥 Response Status:', response.status);
+      
+      const responseText = await response.text();
+      console.log('📄 Raw Response:', responseText);
+
+      let result;
+      try {
+        result = responseText ? JSON.parse(responseText) : {};
+      } catch {
+        result = { message: responseText };
+      }
+
+      if (!response.ok) {
+        const errorDetail = result.Message || result.message || result.title || `HTTP error! status: ${response.status}`;
+        throw new Error(errorDetail);
+      }
+
+      return adaptApiResponse(result);
+    } catch (error: any) {
+      console.error('❌ Upload Portal Document Error:', error);
+      throw error;
+    }
   },
 
-  getCommunities: async (): Promise<ApiResponse<any[]>> => {
-    const url = `/beratenApi/lookups/communities`;
-    return handleApiCall<any[]>(url);
-  },
+  // ✅ একাধিক ডকুমেন্ট আপলোড - একই endpoint ব্যবহার করে
+  uploadMultiplePortalDocuments: async (docs: DocumentFile[], publicReferralId: number): Promise<ApiResponse<any>> => {
+    console.log('📤 Uploading multiple documents:', {
+      publicReferralId,
+      count: docs.length
+    });
 
-  getCounties: async (): Promise<ApiResponse<any[]>> => {
-    const url = `/beratenApi/lookups/counties`;
-    return handleApiCall<any[]>(url);
-  },
+    // প্রতিটি ডকুমেন্ট আলাদাভাবে আপলোড করুন
+    let successCount = 0;
+    const errors: string[] = [];
 
-  getRelationships: async (): Promise<ApiResponse<any[]>> => {
-    const url = `/beratenApi/lookups/relationships`;
-    return handleApiCall<any[]>(url);
+    for (let i = 0; i < docs.length; i++) {
+      const doc = docs[i];
+      try {
+        console.log(`📤 Uploading document ${i + 1}/${docs.length}: ${doc.fileName}`);
+        const response = await api.uploadPortalDocument(doc, publicReferralId);
+        if (response.isSuccess) {
+          successCount++;
+        } else {
+          errors.push(`${doc.fileName}: ${response.message || 'Unknown error'}`);
+        }
+      } catch (error: any) {
+        errors.push(`${doc.fileName}: ${error.message || 'Unknown error'}`);
+        console.error(`❌ Failed to upload ${doc.fileName}:`, error);
+      }
+    }
+
+    // সকল ডকুমেন্ট আপলোডের ফলাফল
+    if (successCount === docs.length) {
+      return {
+        isSuccess: true,
+        data: { uploadedCount: successCount },
+        message: `All ${successCount} documents uploaded successfully`
+      };
+    } else if (successCount > 0) {
+      return {
+        isSuccess: false,
+        data: { uploadedCount: successCount, totalCount: docs.length },
+        message: `${successCount} out of ${docs.length} documents uploaded successfully`,
+        errors: errors
+      };
+    } else {
+      throw new Error(`Failed to upload any documents: ${errors.join('; ')}`);
+    }
   },
 };
