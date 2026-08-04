@@ -31,7 +31,7 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
   const [comments, setComments] = useState('');
   const [isUploading, setIsUploading] = useState(false);
 
-  // Use either publicReferralId or referralId
+  // ✅ Dynamic Referral ID - props থেকে নিন
   const effectiveReferralId = publicReferralId || referralId || 0;
 
   console.log('📌 DocumentsTab Props:', {
@@ -78,8 +78,10 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
       documentType: Number(documentType),
       documentDate,
       comments,
-      name: '',
-      type: ''
+      name: documentName,
+      type: selectedFile.name.split('.').pop() || 'pdf',
+      fileType: selectedFile.type || 'application/octet-stream',
+      fileData: '',
     });
 
     // Reset form
@@ -88,14 +90,12 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
     setComments('');
   };
 
+  // ✅ Save Documents - Dynamic Referral ID ব্যবহার করুন
   const handleSaveDocuments = async () => {
-    if (!isReferralSaved) {
-      alert('⚠️ Please save the Referral Info tab first before uploading documents.');
-      return;
-    }
+    console.log('📌 Using referral ID in DocumentsTab:', effectiveReferralId);
 
     if (!effectiveReferralId) {
-      alert('⚠️ Referral ID is required. Please save the Referral Info tab first.');
+      alert('⚠️ No referral ID available. Please save the Referral Info tab first.');
       return;
     }
 
@@ -106,10 +106,10 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
 
     setIsUploading(true);
     try {
-      console.log('📤 Starting document upload for Referral ID:', effectiveReferralId);
+      console.log('📤 Starting document upload with ID:', effectiveReferralId);
       console.log('📄 Documents to upload:', docs.length);
 
-      // ✅ একাধিক ডকুমেন্ট আপলোড - একই endpoint ব্যবহার করে
+      // ✅ Dynamic ID দিয়ে আপলোড করুন
       const response = await api.uploadMultiplePortalDocuments(docs, effectiveReferralId);
       
       console.log('✅ Upload Response:', response);
@@ -118,17 +118,14 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
         alert(`✅ All ${docs.length} documents uploaded successfully!`);
         onSave();
       } else {
-        // কিছু ডকুমেন্ট আপলোড হয়েছে, কিছু হয়নি
         if (response.data?.uploadedCount > 0) {
-          alert(`⚠️ ${response.data.uploadedCount} out of ${docs.length} documents uploaded successfully. Please try again for the remaining documents.`);
+          alert(`⚠️ ${response.data.uploadedCount} out of ${docs.length} documents uploaded successfully.`);
         } else {
           throw new Error(response.message || 'Failed to upload documents');
         }
       }
     } catch (error: any) {
       console.error('❌ Upload Error:', error);
-      
-      // যদি সব ডকুমেন্ট আপলোড ফেইল করে
       alert(`❌ Failed to upload documents: ${error.message || 'Unknown error'}`);
     } finally {
       setIsUploading(false);
@@ -138,17 +135,17 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
   return (
     <>
       <div className="space-y-6">
-        {!isReferralSaved && (
-          <div className="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-xl text-sm">
-            ⚠️ Please save the <strong>Referral Info</strong> tab first before uploading documents (Required for PublicReferralId).
-          </div>
-        )}
-
-        {effectiveReferralId > 0 && (
-          <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-xl text-sm">
-            ✅ Ready to upload documents
-          </div>
-        )}
+        <div className={`px-4 py-3 rounded-xl text-sm ${
+          effectiveReferralId > 0 
+            ? 'bg-green-50 border border-green-200 text-green-800' 
+            : 'bg-amber-50 border border-amber-200 text-amber-800'
+        }`}>
+          {effectiveReferralId > 0 ? (
+            `✅ Using Referral ID: ${effectiveReferralId}`
+          ) : (
+            '⚠️ Please save Referral Info tab first to get Referral ID'
+          )}
+        </div>
 
         {/* File Add Form */}
         <form onSubmit={handleAddDocument} className="bg-slate-50 border border-gray-200 rounded-2xl p-6 space-y-4">
@@ -191,6 +188,7 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
                   <option value={1}>Supporting Doc</option>
                   <option value={2}>Medical Record</option>
                   <option value={3}>Identification</option>
+                  <option value={4}>Financial / Excel Record</option>
                 </select>
               </div>
 
@@ -206,7 +204,7 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">Comments (Max 1000 chars)</label>
+                <label className="block text-xs font-bold text-gray-700 mb-1">Comments</label>
                 <input
                   type="text"
                   maxLength={1000}
@@ -266,6 +264,7 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
         <SaveButton 
           onSave={handleSaveDocuments} 
           label={isUploading ? "Uploading..." : "Save Documents"} 
+          disabled={isUploading || docs.length === 0 || !effectiveReferralId}
         />
       </div>
     </>

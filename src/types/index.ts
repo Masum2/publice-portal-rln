@@ -1,15 +1,10 @@
-// types/index.ts
-
-
-
-// ✅ Referral - incidentDate এবং incidentTime এখন optional
 export interface Referral {
   id: string;
-  // ✅ Reporting fields - optional (backend এ সেট হবে)
-  reportingDate?: string;
-  reportingTime?: string;
-  reportingMethod?: string;
-  reportingSource?: string;
+  victimFirstName: string;
+  victimLastName: string;
+  approximateAge: number;
+  victimAddress: string;
+  victimPhone: string;
   reporterFirstName: string;
   reporterLastName: string;
   relationship: string;
@@ -32,18 +27,13 @@ export interface Referral {
   incidentZip: string;
   incidentCommunity: string;
   incidentComments: string;
-  // victimName: string;
-  // victimAge: string;
-  // victimAddress: string;
+  
   // Case Study fields
-  // ✅ incidentDate এবং incidentTime optional
-  incidentDate?: string;
-  incidentTime?: string;
-  incidentDescription: string;
-  incidentLocation: string;
-  abuseDuration: string;
-  lastSeen: string;
-  shortTermMemoryLoss: boolean | null;
+  incidentDescription?: string;
+  incidentLocation?: string;
+  abuseDuration?: string;
+  lastSeen?: string;
+  shortTermMemoryLoss?: boolean | null;
   hasCausedHarm: boolean;
   harmDescription: string;
   healthFunctioning: string;
@@ -63,17 +53,38 @@ export interface Referral {
   otherReportsDescription: string;
   lawEnforcementInvolved: boolean;
   lawEnforcementDescription: string;
-  // Status fields
+  
   status: 'Draft' | 'Submitted' | 'Under Review' | 'Accepted' | 'Rejected';
   submittedAt: string;
-  reviewStartedAt: string | null;
-  acceptedAt: string | null;
-  rejectedAt: string | null;
-  linkedClientId: string | null;
+  reviewStartedAt?: string | null;
+  acceptedAt?: string | null;
+  rejectedAt?: string | null;
+  linkedClientId?: string | null;
   documents: DocumentFile[];
 }
 
-// ✅ CreateReferralRequest - backend এ পাঠানোর জন্য
+export interface DocumentFile {
+  id: string;
+  file: File;
+  fileName: string;
+  documentName: string;
+  documentType: number;
+  comments?: string;
+  documentDate?: string;
+  uploadedAt: string;
+  
+  // ব্যাকএন্ডের জন্য নতুন যোগ করা ফিল্ডসমূহ
+  name?: string;
+  type?: string;
+  fileType?: string;
+  fileData?: string;
+  recordedBy?: string;
+  recordedOn?: string;
+  createdBy?: string;
+  createdOn?: string;
+  publicReferralId?: number;
+}
+
 export interface CreateReferralRequest {
   reporterFirstName: string;
   reporterLastName: string;
@@ -108,12 +119,19 @@ export interface CreateReferralRequest {
   decision: number;
   preferredInformingMethod: number;
   nickName: string;
+  victimFirstName: string;
+  victimLastName: string;
+  approximateAge: number;
+  victimAddress: string;
+  phone: string;
+  
+  // 400 Bad Request এড়ানোর জন্য জরুরি ফিল্ডসমূহ
+  CreatedBy: number;
+  CreatedOn: string;
+  RecordedBy: number;
 }
 
-// ✅ CreateCaseStudyRequest - incidentDate এবং incidentTime optional
 export interface CreateCaseStudyRequest {
-  incidentDate?: string;
-  incidentTime?: string;
   incidentLocation: string;
   incidentDesc: string;
   abuseNeglectOrExploitationDesc: string;
@@ -141,36 +159,14 @@ export interface CreateCaseStudyRequest {
   directionsToCurrentLocation: string;
   isSubmitted: boolean;
   publicReferralId: number;
+  CreatedBy: number;
+  CreatedOn: string;
+  RecordedBy: number;
 }
 
 export interface ApiResponse<T> {
   isSuccess: boolean;
   data: T;
-  message?: string;
+  message: string;
   errors?: string[];
-}
-// types.ts
-
-export interface DocumentFile {
-  id: string;
-  file: File;
-  fileName: string;
-  documentName: string;
-  documentType: number;
-  documentDate: string;
-  comments?: string;
-  uploadedAt: string;
-  name: string;
-  type: string;
-}
-
-export interface CreatePortalDocumentRequest {
-  publicReferralId: number;
-  documentType: number;
-  comments: string;
-  documentDate: string;
-  fileType: string;
-  fileName: string;
-  documentName: string;
-  fileBytes: string;
 }

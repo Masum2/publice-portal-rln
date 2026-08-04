@@ -1,18 +1,16 @@
-// ReferralTab/index.tsx
 import React from 'react';
 import { User, MapPin } from 'lucide-react';
 
 import type { ReferralTabErrors, ReferralTabState } from '../../types/ReferralTab/types';
 import { SaveButton } from '../SaveButton';
 
-// Data arrays
 const STATES = [
   'Minnesota', 'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California',
-  'Colorado', 'Connecticut', 'Delware', 'Florida', 'Georgia', 'Hawaii',
-  'Idaho', 'lllinois', 'Indiana', 'lowa', 'Kansas', 'Kentucky', 'Louisiana',
+  'Colorado', 'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii',
+  'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana',
   'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Mississippi', 'Missouri',
   'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey', 'New Mexico',
-  'New York', 'North Carolina', 'North Dakota', 'ohio', 'Oklahoma', 'Oregon',
+  'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon',
   'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota', 'Tennessee',
   'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington', 'West Virginia',
   'Wisconsin', 'Wyoming'
@@ -25,17 +23,17 @@ const COMMUNITIES = [
 const COUNTIES = [
   'Beltrami County', 'Clearwater', 'Aitkin', 'Anoka', 'Becker', 'Benton',
   'Big Stone', 'Blue Earth', 'Brown', 'Carver', 'Carlton', 'Cass',
-  'CHippewa', 'Chisago', 'Clay', 'Cottonwood', 'Crow Wing', 'Dakota',
+  'Chippewa', 'Chisago', 'Clay', 'Cottonwood', 'Crow Wing', 'Dakota',
   'Dodge', 'Douglas', 'Faribault', 'Fillmore', 'Freeborn', 'Goodhue',
   'Grant', 'Hennepin', 'Houston', 'Hubbard', 'Isanti', 'Itasca',
-  'Jackson', 'Kanabec', 'Kandiyochi', 'Kittson', 'Koochiching',
+  'Jackson', 'Kanabec', 'Kandiyohi', 'Kittson', 'Koochiching',
   'Lac qui Parle', 'Lake', 'Lake of the Woods', 'Le Sueur', 'Lincoln',
-  'Mahnomen', 'Marshall', 'Martin', 'McLeod', 'Meeker', 'Mile Lacs',
-  'Morrison', 'Mower', 'Murry', 'Nicollet', 'Nobles', 'Norman',
+  'Mahnomen', 'Marshall', 'Martin', 'McLeod', 'Meeker', 'Mille Lacs',
+  'Morrison', 'Mower', 'Murray', 'Nicollet', 'Nobles', 'Norman',
   'Olmsted', 'Otter Tail', 'Pennington', 'Pine', 'Pipestone', 'Polk',
   'Pope', 'Ramsey', 'Red Lake', 'Redwood', 'Renville', 'Rice', 'Rock',
-  'Roseau', 'St.Louis', 'Scott', 'Sherburne', 'Sibley', 'Stearns',
-  'Steele', 'Stevens', 'Swift', 'Todd', 'traverse', 'Wabasha', 'Wadena',
+  'Roseau', 'St. Louis', 'Scott', 'Sherburne', 'Sibley', 'Stearns',
+  'Steele', 'Stevens', 'Swift', 'Todd', 'Traverse', 'Wabasha', 'Wadena',
   'Waseca', 'Washington', 'Wilkin', 'Winona', 'Wright', 'Yellow Medicine',
   'Cook'
 ];
@@ -73,32 +71,36 @@ export const ReferralTab: React.FC<ReferralTabProps> = ({
     setState((prev) => ({ ...prev, [key]: value }));
   };
 
-  const renderCheckbox = (
+  const renderCheckbox = <K extends keyof ReferralTabState>(
     label: string,
-    key: keyof ReferralTabState,
+    key: K,
     className?: string
   ) => (
-    <label className={`flex items-center gap-2 text-sm text-gray-700 cursor-pointer ${className}`}>
+    <label className={`flex items-center gap-2 text-sm text-gray-700 cursor-pointer ${className || ''}`}>
       <input
         type="checkbox"
-        checked={state[key] as boolean}
-        onChange={(e) => updateField(key, e.target.checked as any)}
+        checked={Boolean(state[key])}
+        onChange={(e) => updateField(key, e.target.checked as ReferralTabState[K])}
         className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 focus:ring-2"
       />
       {label}
     </label>
   );
 
-  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>, field: keyof ReferralTabState) => {
+  const handlePhoneChange = <K extends keyof ReferralTabState>(
+    e: React.ChangeEvent<HTMLInputElement>,
+    field: K
+  ) => {
     const rawValue = e.target.value.replace(/\D/g, '');
     const formattedValue = formatPhoneNumber(rawValue);
-    updateField(field, formattedValue as any);
+    updateField(field, formattedValue as ReferralTabState[K]);
   };
 
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
+        {/* ===== VICTIM / CLIENT INFORMATION ===== */}
         <div className="md:col-span-2">
           <h3 className="text-sm font-bold text-purple-600 uppercase tracking-wider flex items-center gap-2">
             <User className="w-4 h-4" />
@@ -106,49 +108,84 @@ export const ReferralTab: React.FC<ReferralTabProps> = ({
           </h3>
         </div>
 
+        {/* Victim First Name */}
         <div>
           <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-            Victim's Name <span className="text-red-500">*</span>
+            Victim's First Name <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
-            value={state.victimName}
-            onChange={(e) => updateField('victimName', e.target.value)}
+            value={state.victimFirstName ?? ''}
+            onChange={(e) => updateField('victimFirstName', e.target.value)}
             className={`w-full p-3.5 bg-white border rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition ${
-              errors.victimName ? 'border-red-500' : 'border-gray-200'
+              errors.victimFirstName ? 'border-red-500' : 'border-gray-200'
             }`}
-            placeholder="Full name"
+            placeholder="First name"
           />
-          {errors.victimName && <p className="text-xs text-red-500 font-semibold mt-1">⚠️ {errors.victimName}</p>}
+          {errors.victimFirstName && <p className="text-xs text-red-500 font-semibold mt-1">⚠️ {errors.victimFirstName}</p>}
         </div>
 
+        {/* Victim Last Name */}
         <div>
           <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-            Victim Age
+            Victim's Last Name <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            value={state.victimLastName ?? ''}
+            onChange={(e) => updateField('victimLastName', e.target.value)}
+            className={`w-full p-3.5 bg-white border rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition ${
+              errors.victimLastName ? 'border-red-500' : 'border-gray-200'
+            }`}
+            placeholder="Last name"
+          />
+          {errors.victimLastName && <p className="text-xs text-red-500 font-semibold mt-1">⚠️ {errors.victimLastName}</p>}
+        </div>
+
+        {/* Victim Approximate Age */}
+        <div>
+          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+            Approximate Age
           </label>
           <input
             type="number"
-            value={state.victimAge}
-            onChange={(e) => updateField('victimAge', e.target.value)}
+            value={state.approximateAge ?? ''}
+            onChange={(e) => updateField('approximateAge', e.target.value ? Number(e.target.value) : 0)}
             className="w-full p-3.5 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition"
             placeholder="Age"
           />
         </div>
 
+        {/* Victim Phone */}
+        <div>
+          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+            Victim Phone No.
+          </label>
+          <input
+            type="tel"
+            value={state.victimPhone ?? ''}
+            onChange={(e) => handlePhoneChange(e, 'victimPhone')}
+            className="w-full p-3.5 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition"
+            placeholder="(555) 123-4567"
+            maxLength={14}
+          />
+        </div>
+
+        {/* Victim Address */}
         <div className="md:col-span-2">
           <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
             Victim Address
           </label>
-          <textarea
-            rows={2}
-            value={state.victimAddress}
+          <input
+            type="text"
+            value={state.victimAddress ?? ''}
             onChange={(e) => updateField('victimAddress', e.target.value)}
-            className="w-full p-3.5 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition resize-none"
+            className="w-full p-3.5 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition"
             placeholder="Victim's address"
           />
         </div>
 
-        {/* ===== REPORTER INFORMATION - AFTER VICTIM ===== */}
+        {/* ===== REPORTER INFORMATION ===== */}
         <div className="md:col-span-2 border-t border-gray-200 pt-6">
           <h3 className="text-sm font-bold text-blue-600 uppercase tracking-wider flex items-center gap-2">
             <User className="w-4 h-4" />
@@ -197,11 +234,12 @@ export const ReferralTab: React.FC<ReferralTabProps> = ({
             onChange={(e) => updateField('relationship', e.target.value)}
             className="w-full p-3.5 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition"
           >
-            <option>Relative</option>
-            <option>Friend</option>
-            <option>Staff in Licensed Facility</option>
-            <option>Home Health Staff</option>
-            <option>Other</option>
+            <option value="">Select Relationship</option>
+            <option value="Relative">Relative</option>
+            <option value="Friend">Friend</option>
+            <option value="Staff in Licensed Facility">Staff in Licensed Facility</option>
+            <option value="Home Health Staff">Home Health Staff</option>
+            <option value="Other">Other</option>
           </select>
         </div>
 
@@ -241,8 +279,8 @@ export const ReferralTab: React.FC<ReferralTabProps> = ({
             className="w-full p-3.5 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition"
           >
             <option value="">Select State</option>
-            {STATES.map((state) => (
-              <option key={state} value={state}>{state}</option>
+            {STATES.map((st) => (
+              <option key={st} value={st}>{st}</option>
             ))}
           </select>
         </div>
@@ -378,8 +416,8 @@ export const ReferralTab: React.FC<ReferralTabProps> = ({
             className="w-full p-3.5 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition"
           >
             <option value="">Select State</option>
-            {STATES.map((state) => (
-              <option key={state} value={state}>{state}</option>
+            {STATES.map((st) => (
+              <option key={st} value={st}>{st}</option>
             ))}
           </select>
         </div>
@@ -453,3 +491,4 @@ export const ReferralTab: React.FC<ReferralTabProps> = ({
     </>
   );
 };
+

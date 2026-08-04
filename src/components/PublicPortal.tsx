@@ -50,7 +50,7 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ onAddReferral }) => 
     details: {},
   });
   
-  const { submitReferral, submitCaseStudy, isLoading, error, reset: resetApiError } = useReferral();
+  const { submitReferral, submitCaseStudy, uploadDocuments, isLoading, error, reset: resetApiError } = useReferral();
   const [referralId, setReferralId] = useState<number | null>(null);
 
   // Get current date and time for defaults
@@ -71,6 +71,11 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ onAddReferral }) => 
 
   // State for all tabs
   const [referralState, setReferralState] = useState({
+    victimFirstName: '',
+    victimLastName: '',
+    approximateAge: 0,
+    victimAddress: '',
+    victimPhone: '',
     reporterFirstName: '',
     reporterLastName: '',
     relationship: 'Relative',
@@ -165,34 +170,6 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ onAddReferral }) => 
     ]);
   };
 
-  // --- Save Documents Tab ---
-  const saveDocumentsTab = async (): Promise<void> => {
-    if (!referralId) {
-      alert('⚠️ Please save the Referral Information tab first.');
-      return;
-    }
-
-    if (docs.length === 0) {
-      alert('⚠️ Please add at least one document before saving.');
-      return;
-    }
-
-    try {
-      // The actual upload will be handled in DocumentsTab
-      setSavedTabs({ ...savedTabs, documents: true });
-      
-      showSuccessModal(
-        'documents',
-        '📎 Documents Saved Successfully!',
-        `${docs.length} document(s) have been successfully uploaded and saved.`,
-        { documentCount: docs.length }
-      );
-    } catch (error) {
-      console.error('Save documents error:', error);
-      alert(`❌ Failed to save documents: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  };
-
   const removeFile = (id: string): void => {
     setDocs(docs.filter((d) => d.id !== id));
   };
@@ -200,6 +177,8 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ onAddReferral }) => 
   // --- Validation ---
   const validateReferralTab = (): boolean => {
     const newErrors: { [key: string]: string } = {};
+    if (!referralState.victimFirstName) newErrors.victimFirstName = "Victim's first name required";
+    if (!referralState.victimLastName) newErrors.victimLastName = "Victim's last name required";
     if (!referralState.reporterFirstName) newErrors.reporterFirstName = 'First name required';
     if (!referralState.reporterLastName) newErrors.reporterLastName = 'Last name required';
     if (!referralState.reporterPhone) newErrors.reporterPhone = 'Phone required';
@@ -259,10 +238,22 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ onAddReferral }) => 
       decision: 0,
       preferredInformingMethod: 1,
       nickName: `${referralState.reporterFirstName || 'John'} ${referralState.reporterLastName || 'Doe'}`.trim() || 'John Doe',
+      
+      // Victim Details
+      victimFirstName: referralState.victimFirstName || '',
+      victimLastName: referralState.victimLastName || '',
+      approximateAge: Number(referralState.approximateAge) || 0,
+      victimAddress: referralState.victimAddress || '',
+      phone: formatPhone(referralState.victimPhone) || '',
+
+      // Required Audit Fields to prevent 400 Bad Request
+      CreatedBy: 105,
+      CreatedOn: new Date().toISOString(),
+      RecordedBy: 105,
     };
   };
 
-  const prepareCaseStudyData = (): CreateCaseStudyRequest => {
+ const prepareCaseStudyData = (): CreateCaseStudyRequest => {
     return {
       incidentLocation: caseStudyState.incidentLocation || '',
       incidentDesc: caseStudyState.incidentDescription || '',
@@ -291,10 +282,15 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ onAddReferral }) => 
       directionsToCurrentLocation: '',
       isSubmitted: false,
       publicReferralId: referralId || 0,
+
+      // এই অডিট ফিল্ডগুলো যোগ করতে হবে (যা সার্ভার ভ্যালিডেশনে চাচ্ছে)
+      CreatedBy: 105,
+      CreatedOn: new Date().toISOString(),
+      RecordedBy: 105,
     };
   };
 
-  // --- Save Functions ---
+  // --- Save Referral Tab ---
   const saveReferralTab = async (): Promise<void> => {
     if (!validateReferralTab()) {
       alert('⚠️ Please fill in all required fields before saving.');
@@ -307,29 +303,13 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ onAddReferral }) => 
       return;
     }
 
-    const cleanReporterZip = referralState.reporterZip.replace(/\D/g, '');
-    if (cleanReporterZip.length > 0 && cleanReporterZip.length !== 5) {
-      alert('⚠️ Reporter Zip Code must be 5 digits.');
-      return;
-    }
-
-    const cleanIncidentZip = referralState.incidentZip.replace(/\D/g, '');
-    if (cleanIncidentZip.length > 0 && cleanIncidentZip.length !== 5) {
-      alert('⚠️ Incident Zip Code must be 5 digits.');
-      return;
-    }
-
     try {
       const referralData = prepareReferralData();
-      console.log('📤 Sending referral data:', referralData);
-      
       const response = await submitReferral(referralData);
-      console.log('📦 Full response from submitReferral:', response);
 
       if (response && response.isSuccess) {
         let newReferralId: number | null = null;
         
-        // Extract ID from various response formats
         if (typeof response.data === 'number') {
           newReferralId = response.data;
         } else if (typeof response.data === 'string') {
@@ -346,16 +326,13 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ onAddReferral }) => 
           }
         }
         
-        console.log('✅ Extracted Referral ID:', newReferralId);
-        
         if (newReferralId) {
           setReferralId(newReferralId);
-          console.log('✅ Referral ID set to state:', newReferralId);
         } else {
           throw new Error('Could not extract Referral ID from response');
         }
         
-        setSavedTabs({ ...savedTabs, referral: true });
+        setSavedTabs((prev) => ({ ...prev, referral: true }));
         
         const updatedReferral: Referral = {
           id: String(newReferralId || ''),
@@ -398,7 +375,6 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ onAddReferral }) => 
           { id: newReferralId ? `#${newReferralId}` : undefined },
           () => {
             setActiveTab('casestudy');
-            console.log('🔄 Redirecting to Case Study Tab from modal');
           }
         );
       } else {
@@ -410,6 +386,7 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ onAddReferral }) => 
     }
   };
 
+  // --- Save Case Study Tab ---
   const saveCaseStudyTab = async (): Promise<void> => {
     if (!validateCaseStudyTab()) {
       alert('⚠️ Please fill in all required fields before saving.');
@@ -423,13 +400,10 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ onAddReferral }) => 
 
     try {
       const caseStudyData = prepareCaseStudyData();
-      console.log('📤 Sending case study data with Referral ID:', referralId);
-      console.log('📦 Full case study data:', caseStudyData);
-      
       const response = await submitCaseStudy(caseStudyData);
 
       if (response.isSuccess) {
-        setSavedTabs({ ...savedTabs, casestudy: true });
+        setSavedTabs((prev) => ({ ...prev, casestudy: true }));
         
         showSuccessModal(
           'casestudy',
@@ -438,7 +412,6 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ onAddReferral }) => 
           { id: response.data ? `#${response.data}` : undefined },
           () => {
             setActiveTab('documents');
-            console.log('🔄 Redirecting to Documents Tab from modal');
           }
         );
       } else {
@@ -449,6 +422,61 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ onAddReferral }) => 
       alert(`❌ Failed to save case study: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
+
+  // --- Save Documents Tab (Backend API Integration Added) ---
+// PublicPortal/index.tsx - saveDocumentsTab ফাংশন
+
+// ✅ Save Documents Tab - Hardcoded Referral ID 8 ব্যবহার করুন
+// PublicPortal/index.tsx - saveDocumentsTab ফাংশন
+
+const saveDocumentsTab = async (): Promise<void> => {
+  // ✅ Dynamic Referral ID ব্যবহার করুন
+  const currentReferralId = referralId;
+  
+  console.log('📌 Using referral ID:', currentReferralId);
+
+  if (!currentReferralId) {
+    alert('⚠️ No referral ID available. Please save the Referral Info tab first.');
+    return;
+  }
+
+  if (docs.length === 0) {
+    alert('⚠️ Please add at least one document before saving.');
+    return;
+  }
+
+  // ✅ প্রতিটি ডকুমেন্টে file আছে কিনা চেক করুন
+  const invalidDocs = docs.filter(d => !d.file || !(d.file instanceof File));
+  if (invalidDocs.length > 0) {
+    console.error('❌ Invalid documents found:', invalidDocs.map(d => d.fileName));
+    alert(`⚠️ ${invalidDocs.length} document(s) have no file object. Please remove them and re-add.`);
+    return;
+  }
+
+  try {
+    console.log('📤 Saving documents with Referral ID:', currentReferralId);
+    console.log('📄 Documents to upload:', docs.length);
+    
+    // ✅ Dynamic ID দিয়ে ডকুমেন্ট আপলোড করুন
+    const response = await uploadDocuments(docs, currentReferralId);
+
+    if (response.isSuccess) {
+      setSavedTabs((prev) => ({ ...prev, documents: true }));
+      
+      showSuccessModal(
+        'documents',
+        '📎 Documents Saved Successfully!',
+        `${docs.length} document(s) have been successfully uploaded and saved.`,
+        { documentCount: docs.length }
+      );
+    } else {
+      throw new Error(response.message || 'Failed to upload documents');
+    }
+  } catch (error) {
+    console.error('❌ Save documents error:', error);
+    alert(`❌ Failed to save documents: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+};
 
   const handleSubmit = async (): Promise<void> => {
     if (!isAgreed) {
@@ -608,8 +636,6 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ onAddReferral }) => 
                 />
               )}
               
-
-
 {activeTab === 'documents' && (
   <DocumentsTab
     docs={docs}
@@ -617,8 +643,8 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ onAddReferral }) => 
     onRemoveFile={removeFile}
     onSave={saveDocumentsTab}
     isReferralSaved={savedTabs.referral}
-    publicReferralId={referralId || undefined}
-    referralId={referralId || undefined}
+    publicReferralId={referralId || undefined}  // ✅ Dynamic ID
+    referralId={referralId || undefined}        // ✅ Dynamic ID
   />
 )}
             </div>

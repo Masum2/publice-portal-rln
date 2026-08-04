@@ -1,7 +1,9 @@
-// ReferralTab/types.ts
-
 export interface ReferralTabState {
-  // ❌ REMOVED: reportingDate, reportingTime, reportingMethod, reportingSource
+  victimFirstName: string;
+  victimLastName: string;
+  approximateAge: number;
+  victimAddress: string;
+  victimPhone: string;
   reporterFirstName: string;
   reporterLastName: string;
   relationship: string;
@@ -24,16 +26,14 @@ export interface ReferralTabState {
   incidentZip: string;
   incidentCommunity: string;
   incidentComments: string;
-  // victimName: string;
-  // victimAge: string;
-  // victimAddress: string;
 }
 
 export interface ReferralTabErrors {
+  victimFirstName?: string;
+  victimLastName?: string;
   reporterFirstName?: string;
   reporterLastName?: string;
   reporterPhone?: string;
   reporterEmail?: string;
   incidentAddress?: string;
-  // victimName?: string;
 }
