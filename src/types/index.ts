@@ -129,6 +129,7 @@ export interface CreateReferralRequest {
   CreatedBy: number;
   CreatedOn: string;
   RecordedBy: number;
+  communityLookupId: number;
 }
 
 export interface CreateCaseStudyRequest {

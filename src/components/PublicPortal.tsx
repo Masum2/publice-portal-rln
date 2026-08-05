@@ -446,12 +446,85 @@ const getCommunityText = (id: number): string => {
   };
 
 
+// const prepareReferralData = (): CreateReferralRequest => {
+//   const formatPhone = (phone: string): string => phone.replace(/\D/g, '');
+//   const formatZip = (zip: string): string => zip.replace(/\D/g, '');
+
+//   const currentDate = getCurrentDate();
+//   const currentTime = getCurrentTime();
+
+//   const data: CreateReferralRequest = {
+//     reporterFirstName: referralState.reporterFirstName || 'John',
+//     reporterLastName: referralState.reporterLastName || 'Doe',
+//     reporterAddress: referralState.reporterAddress || '123 Main Street, Apt 4B',
+//     reporterCity: referralState.reporterCity || 'New York',
+//     reporterZip: formatZip(referralState.reporterZip) || '10001',
+//     reporterPhone: formatPhone(referralState.reporterPhone) || '5551234567',
+//     reporterEmail: referralState.reporterEmail || 'john.doe@example.com',
+//     reporterOrganization: referralState.organization || 'Community Watch Group',
+//     reporterJobTitle: referralState.jobTitle || 'Volunteer',
+//     isReporterWantsTobeAnonomyous: referralState.anonymous,
+// isReporterAvailableForMoreInfo: referralState.availableForMoreInfo,
+// isReporterInterestedInUpdates: referralState.wantsToBeInformed,
+// hasReporterWitnessed: referralState.hasWitnessed,
+
+
+//     address: referralState.incidentAddress || '456 Elm Street',
+//     city: referralState.incidentCity || 'New York',
+//     zip: formatZip(referralState.incidentZip) || '10002',
+//     reportDate: currentDate,
+//     reportTime: currentTime,
+//     reportingMethod: 'Electronically',
+//     reportingSource: 2,
+//     isAdultAbuseBeingReported: true,
+//     comments: referralState.incidentComments || 'Observed severe neglect and poor living conditions.',
+//     aps_ClientId: 1,
+//     reporterGenderLookupId: 1,
+//     reporterStateLookupId: 32,
+//     apS_ReporterRelationshipLookupId: 4,
+//     stateLookupId: 32,
+//     countyLookupId: 5,
+//     submitById: 105,
+//     isSubmitted: false,
+//     decision: 0,
+//     preferredInformingMethod: 1,
+//     nickName: `${referralState.reporterFirstName || 'John'} ${referralState.reporterLastName || 'Doe'}`.trim() || 'John Doe',
+//     victimFirstName: referralState.victimFirstName || '',
+//     victimLastName: referralState.victimLastName || '',
+//     approximateAge: Number(referralState.approximateAge) || 0,
+//     victimAddress: referralState.victimAddress || '',
+//     phone: formatPhone(referralState.victimPhone) || '',
+//     CreatedBy: 105,
+//     CreatedOn: new Date().toISOString(),
+//     RecordedBy: 105,
+//   };
+
+//   if (isEditing && referralId) {
+//     data.Id = referralId;
+//   }
+
+//   return data;
+// };
+
 const prepareReferralData = (): CreateReferralRequest => {
   const formatPhone = (phone: string): string => phone.replace(/\D/g, '');
   const formatZip = (zip: string): string => zip.replace(/\D/g, '');
 
   const currentDate = getCurrentDate();
   const currentTime = getCurrentTime();
+
+  // ✅ Community নাম থেকে ID ম্যাপিং
+  const getCommunityId = (communityName: string): number => {
+    const communityMap: { [key: string]: number } = {
+      'Redby': 1,
+      'Red Lake': 2,
+      'Little Rock': 3,
+      'Ponemah': 4,
+      'Other': 5,
+      'Unknown': 6,
+    };
+    return communityMap[communityName] || 0; // 0 = Unknown/Invalid
+  };
 
   const data: CreateReferralRequest = {
     reporterFirstName: referralState.reporterFirstName || 'John',
@@ -464,14 +537,17 @@ const prepareReferralData = (): CreateReferralRequest => {
     reporterOrganization: referralState.organization || 'Community Watch Group',
     reporterJobTitle: referralState.jobTitle || 'Volunteer',
     isReporterWantsTobeAnonomyous: referralState.anonymous,
-isReporterAvailableForMoreInfo: referralState.availableForMoreInfo,
-isReporterInterestedInUpdates: referralState.wantsToBeInformed,
-hasReporterWitnessed: referralState.hasWitnessed,
-
+    isReporterAvailableForMoreInfo: referralState.availableForMoreInfo,
+    isReporterInterestedInUpdates: referralState.wantsToBeInformed,
+    hasReporterWitnessed: referralState.hasWitnessed,
 
     address: referralState.incidentAddress || '456 Elm Street',
     city: referralState.incidentCity || 'New York',
     zip: formatZip(referralState.incidentZip) || '10002',
+    
+    // ✅ Community Lookup ID যোগ করুন
+    communityLookupId: getCommunityId(referralState.incidentCommunity),
+    
     reportDate: currentDate,
     reportTime: currentTime,
     reportingMethod: 'Electronically',
@@ -505,8 +581,6 @@ hasReporterWitnessed: referralState.hasWitnessed,
 
   return data;
 };
-
-
 
 const prepareCaseStudyData = (): CreateCaseStudyRequest => {
   const data: CreateCaseStudyRequest = {
