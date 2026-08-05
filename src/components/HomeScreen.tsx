@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Shield, FileText, Clock, Users, ArrowRight, Phone, Mail, MapPin } from 'lucide-react';
+import { Shield, FileText, Clock, Users, ArrowRight, } from 'lucide-react';
 
 export const HomeScreen: React.FC = () => {
   return (
@@ -25,7 +25,7 @@ export const HomeScreen: React.FC = () => {
               {/* Header Logo */}
               <div className="flex items-center">
                 <svg className="h-8 md:h-10 w-auto" viewBox="0 0 200 50" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  {/* যদি আপনার SVG ফাইলের মূল কালার কালো বা গাঢ় হয়, তবে এখানে fill="white" দিয়ে সাদা করা হয়েছে */}
+                
                   <image href="https://www.beratensoftware.com/Images/Logos/BeratenLogo.svg" width="100%" height="100%" style={{ filter: 'drop-shadow(0px 2px 4px rgba(0,0,0,0.5))' }} />
                 </svg>
               </div>
@@ -54,7 +54,7 @@ export const HomeScreen: React.FC = () => {
                 <div className="mb-8 flex justify-center">
                   <div className="w-48 h-28 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center p-4 shadow-2xl shadow-blue-500/30">
                    <svg className="h-8 md:h-10 w-auto" viewBox="0 0 200 50" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  {/* যদি আপনার SVG ফাইলের মূল কালার কালো বা গাঢ় হয়, তবে এখানে fill="white" দিয়ে সাদা করা হয়েছে */}
+               
                   <image href="https://www.beratensoftware.com/Images/Logos/BeratenLogo.svg" width="100%" height="100%" style={{ filter: 'drop-shadow(0px 2px 4px rgba(0,0,0,0.5))' }} />
                 </svg>
                   </div>

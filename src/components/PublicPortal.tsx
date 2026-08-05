@@ -46,7 +46,7 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ onAddReferral }) => 
   const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-const [existingCaseStudy, setExistingCaseStudy] = useState<any>(null); // 👈 এই লাইন যোগ করুন
+const [existingCaseStudy, setExistingCaseStudy] = useState<any>(null); 
 
   const [successModal, setSuccessModal] = useState<SuccessModalState>({
     isOpen: false,
@@ -61,7 +61,7 @@ const [existingCaseStudy, setExistingCaseStudy] = useState<any>(null); // 👈 �
     getReferral,
     updateReferral,
     createCaseStudy,
-     getCaseStudy,        // 👈 নতুন
+     getCaseStudy,       
   updateCaseStudy, 
     uploadDocuments,
     isLoading,
@@ -154,7 +154,7 @@ const [existingCaseStudy, setExistingCaseStudy] = useState<any>(null); // 👈 �
     documents: false,
   });
 
-  // ✅ URL থেকে referralId নিন
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const id = params.get('referralId');
@@ -165,8 +165,7 @@ const [existingCaseStudy, setExistingCaseStudy] = useState<any>(null); // 👈 �
     }
   }, []);
 
-  // ✅ GET ডাটা ফেচ করুন
-// components/PublicPortal/index.tsx - fetchReferralData ফাংশন আপডেট করুন
+
 
 const fetchReferralData = async (id: number) => {
   try {
@@ -177,7 +176,6 @@ const fetchReferralData = async (id: number) => {
       const data = response.data;
       console.log('✅ Fetched referral data:', data);
 
-      // ----- রেফারেল স্টেট সেট করুন (আগের মতো) -----
       setReferralState({
         victimFirstName: data.VictimFirstName || '',
         victimLastName: data.VictimLastName || '',
@@ -213,7 +211,7 @@ const fetchReferralData = async (id: number) => {
         incidentComments: data.Comments || '',
       });
 
-      // ----- কেস স্টাডি ডাটা ফেচ করুন -----
+
       try {
         const caseStudyResponse = await getCaseStudy(id);
         console.log('📌 Full CaseStudy Response:', caseStudyResponse);
@@ -221,8 +219,7 @@ const fetchReferralData = async (id: number) => {
         if (caseStudyResponse.isSuccess && caseStudyResponse.data) {
           let caseData = caseStudyResponse.data;
           
-          // ✅ সঠিকভাবে কেস স্টাডি অবজেক্ট এক্সট্র্যাক্ট করুন
-          // সার্ভার যেভাবে ডাটা দিচ্ছে সেভাবে চেক করুন
+         
           if (caseData.CaseStudy) {
             caseData = caseData.CaseStudy;
           } else if (caseData.Data && caseData.Data.CaseStudy) {
@@ -231,11 +228,11 @@ const fetchReferralData = async (id: number) => {
             caseData = caseData.PublicReferral.CaseStudy;
           }
           
-          // যদি caseData তে IncidentDesc না থাকে, তাহলে কেস স্টাডি নেই
+       
           if (!caseData.IncidentDesc && !caseData.incidentDesc) {
             console.log('No case study data found');
             setExistingCaseStudy(null);
-            // কেস স্টাডি স্টেট খালি করুন
+        
             setCaseStudyState({
               incidentDescription: '',
               incidentLocation: '',
@@ -266,10 +263,10 @@ const fetchReferralData = async (id: number) => {
             console.log('✅ Extracted case study data:', caseData);
             console.log('✅ Case Study ID:', caseData.Id || caseData.id || caseData.caseStudyId);
             
-            // ✅ existingCaseStudy তে কেস স্টাডির ডাটা রাখুন
+    
             setExistingCaseStudy(caseData);
             
-            // ✅ কেস স্টাডি স্টেট সেট করুন
+        
             setCaseStudyState({
               incidentDescription: caseData.IncidentDesc || caseData.incidentDesc || '',
               incidentLocation: caseData.IncidentLocation || caseData.incidentLocation || '',
@@ -317,7 +314,7 @@ const fetchReferralData = async (id: number) => {
   }
 };
 
-// ✅ হেল্পার ফাংশন - Relationship টেক্সট পাওয়ার জন্য
+
 const getRelationshipText = (id: number): string => {
   const map: { [key: number]: string } = {
     4: 'Relative',
@@ -329,7 +326,7 @@ const getRelationshipText = (id: number): string => {
   return map[id] || '';
 };
 
-// ✅ হেল্পার ফাংশন - State টেক্সট পাওয়ার জন্য
+
 const getStateText = (id: number): string => {
   const states = [
     'Minnesota', 'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California',
@@ -345,7 +342,6 @@ const getStateText = (id: number): string => {
   return states[id - 1] || '';
 };
 
-// ✅ হেল্পার ফাংশন - County টেক্সট পাওয়ার জন্য
 const getCountyText = (id: number): string => {
   const counties = [
     'Beltrami County', 'Clearwater', 'Aitkin', 'Anoka', 'Becker', 'Benton',
@@ -367,7 +363,7 @@ const getCountyText = (id: number): string => {
   return counties[id - 1] || '';
 };
 
-// ✅ হেল্পার ফাংশন - Community টেক্সট পাওয়ার জন্য
+
 const getCommunityText = (id: number): string => {
   const communities = ['Redby', 'Red Lake', 'Little Rock', 'Ponemah', 'Other', 'Unknown'];
   return communities[id - 1] || '';
@@ -497,8 +493,6 @@ const getCommunityText = (id: number): string => {
     return Object.keys(newErrors).length === 0;
   };
 
-  // --- Data Preparation ---
-// PublicPortal.tsx
 
 const prepareReferralData = (): CreateReferralRequest => {
   const formatPhone = (phone: string): string => phone.replace(/\D/g, '');
@@ -551,7 +545,6 @@ const prepareReferralData = (): CreateReferralRequest => {
     RecordedBy: 105,
   };
 
-  // ✅ শুধুমাত্র PUT রিকোয়েস্টের জন্য Id যোগ করুন
   if (isEditing && referralId) {
     data.Id = referralId;
   }
@@ -559,13 +552,7 @@ const prepareReferralData = (): CreateReferralRequest => {
   return data;
 };
 
-// components/PublicPortal/index.tsx
 
-// components/PublicPortal/index.tsx
-
-// components/PublicPortal/index.tsx
-
-// components/PublicPortal/index.tsx
 
 const prepareCaseStudyData = (): CreateCaseStudyRequest => {
   const data: CreateCaseStudyRequest = {
@@ -603,8 +590,7 @@ const prepareCaseStudyData = (): CreateCaseStudyRequest => {
 
   return data;
 };
-  // ✅ SAVE/UPDATE Referral Tab
-// PublicPortal.tsx - saveReferralTab ফাংশন আপডেট করুন
+
 
 const saveReferralTab = async (): Promise<void> => {
   setErrors({});
@@ -630,10 +616,10 @@ const saveReferralTab = async (): Promise<void> => {
       console.log('🔄 Updating existing referral ID:', referralId);
       console.log('📤 Update Data:', referralData);
       
-      // ✅ নিশ্চিত করুন যে ডাটাতে Id আছে
+     
       const updateData = {
         ...referralData,
-        Id: referralId, // 👈 স্পষ্টভাবে Id যোগ করুন
+        Id: referralId,
       };
       
       response = await updateReferral(referralId, updateData);
@@ -710,11 +696,7 @@ const saveReferralTab = async (): Promise<void> => {
   }
 };
 
-  // --- Save Case Study ---
-// ✅ Save Case Study ফাংশন আপডেট করুন
-// components/PublicPortal/index.tsx
 
-// components/PublicPortal/index.tsx
 
 const saveCaseStudyTab = async (): Promise<void> => {
   setCaseStudyErrors({});
@@ -1067,8 +1049,8 @@ const saveCaseStudyTab = async (): Promise<void> => {
                   referralId={referralId}
                   isReferralSaved={savedTabs.referral}
                   onSave={saveCaseStudyTab}
-                   isEditing={isEditing}  // 👈 এই লাইন যোগ করুন
-    existingCaseStudy={existingCaseStudy}  // 👈 এই লাইন যোগ করুন
+                   isEditing={isEditing}  
+    existingCaseStudy={existingCaseStudy}  
                 />
               )}
 

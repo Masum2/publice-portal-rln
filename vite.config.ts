@@ -17,14 +17,14 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path,
-        configure: (proxy, options) => {
-          proxy.on('error', (err, req, res) => {
+        configure: (proxy) => {
+          proxy.on('error', (err) => {
             console.log('Proxy error:', err);
           });
-          proxy.on('proxyReq', (proxyReq, req, res) => {
+          proxy.on('proxyReq', (proxyReq) => {
             console.log('Proxying request to:', proxyReq.path);
           });
-          proxy.on('proxyRes', (proxyRes, req, res) => {
+          proxy.on('proxyRes', (proxyRes) => {
             console.log('Proxy response status:', proxyRes.statusCode);
           });
         }

@@ -56,7 +56,7 @@ export interface Referral {
   lawEnforcementInvolved: boolean;
   lawEnforcementDescription: string;
   
-  status: 'Draft' | 'Submitted' | 'Under Review' | 'Accepted' | 'Rejected';
+  status: 'Submitted';
   submittedAt: string;
   reviewStartedAt?: string | null;
   acceptedAt?: string | null;
@@ -74,8 +74,6 @@ export interface DocumentFile {
   comments?: string;
   documentDate?: string;
   uploadedAt: string;
-  
-  // ব্যাকএন্ডের জন্য নতুন যোগ করা ফিল্ডসমূহ
   name?: string;
   type?: string;
   fileType?: string;
@@ -127,7 +125,7 @@ export interface CreateReferralRequest {
   victimAddress: string;
   phone: string;
   Id?: number; 
-  // 400 Bad Request এড়ানোর জন্য জরুরি ফিল্ডসমূহ
+  // 400 Bad Request 
   CreatedBy: number;
   CreatedOn: string;
   RecordedBy: number;
@@ -164,9 +162,9 @@ export interface CreateCaseStudyRequest {
   CreatedBy: number;
   CreatedOn: string;
   RecordedBy: number;
-    id?: number;                // কেস স্টাডির আইডি (UPDATE এর জন্য)
-  caseStudyId?: number;       // বিকল্প নাম
-  publicReferralId?: number;  // রেফারেল আইডি (যার সাথে সম্পর্কিত)
+    id?: number;                
+  caseStudyId?: number;       
+  publicReferralId?: number;  
 
 }
 

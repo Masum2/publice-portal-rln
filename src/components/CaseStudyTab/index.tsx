@@ -14,8 +14,8 @@ interface CaseStudyTabProps {
   referralId: number | null;
   isReferralSaved: boolean;
   onSave: () => void;
-  isEditing?: boolean; // 👈 নতুন prop
-  existingCaseStudy?: any; // 👈 নতুন prop - existing data check করার জন্য
+  isEditing?: boolean; 
+  existingCaseStudy?: any; 
 }
 
 type RadioFieldKeys = 

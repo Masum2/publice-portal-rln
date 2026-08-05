@@ -3,7 +3,6 @@ import type {
   CreateReferralRequest,
   CreateCaseStudyRequest,
   ApiResponse,
-  Referral,
   DocumentFile,
 } from '../types';
 
@@ -162,13 +161,13 @@ updateReferral: async (
 
   // ✅ UPDATE Case Study - PUT
 updateCaseStudy: async (
-  publicReferralId: number | string,   // এটি আসলে রেফারেল আইডি
+  publicReferralId: number | string,  
   data: CreateCaseStudyRequest
 ): Promise<ApiResponse<any>> => {
   console.log('📤 Updating case study for publicReferralId:', publicReferralId);
   console.log('📤 Update Data:', JSON.stringify(data, null, 2));
   
-  // URL এ publicReferralId ব্যবহার করুন
+  // URL  publicReferralId 
   const url = `/beratenApi/public-portal/case-studies/${publicReferralId}`;
   return handleApiCall<any>(url, {
     method: 'PUT',
