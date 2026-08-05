@@ -1,22 +1,25 @@
-// PublicPortal/index.tsx
-
-import React, { useState } from 'react';
-import { 
-  User, 
-  Upload,
-  ClipboardList,
-} from 'lucide-react';
+// components/PublicPortal/index.tsx
+import React, { useState, useEffect } from 'react';
+import { User, Upload, ClipboardList } from 'lucide-react';
 
 import { ReferralTab } from './ReferralTab';
 import { CaseStudyTab } from './CaseStudyTab';
 import { DocumentsTab } from './DocumentsTab';
 import { SubmitModal } from './SubmitModal';
 import { SuccessModal } from './SuccessModal';
-
-import type { CreateCaseStudyRequest, CreateReferralRequest, DocumentFile, Referral } from '../types';
-import { useReferral } from '../hooks/useReferral';
 import { ErrorAlert } from './ErrorAlert';
 import { TabButton } from './TabButton';
+
+import type {
+  CreateCaseStudyRequest,
+  CreateReferralRequest,
+  DocumentFile,
+  Referral,
+} from '../types';
+
+import type { CaseStudyTabErrors } from '../types/CaseStudyTab/types';
+import type { ReferralTabErrors } from '../types/ReferralTab/types';
+import { useReferral } from '../hooks/useReferral';
 
 interface PublicPortalProps {
   onAddReferral: (referral: Referral) => void;
@@ -41,7 +44,10 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ onAddReferral }) => 
   const [submitted, setSubmitted] = useState(false);
   const [generatedId, setGeneratedId] = useState('');
   const [showSubmitModal, setShowSubmitModal] = useState(false);
-  
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+const [existingCaseStudy, setExistingCaseStudy] = useState<any>(null); // 👈 এই লাইন যোগ করুন
+
   const [successModal, setSuccessModal] = useState<SuccessModalState>({
     isOpen: false,
     type: 'referral',
@@ -49,11 +55,23 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ onAddReferral }) => 
     message: '',
     details: {},
   });
-  
-  const { submitReferral, submitCaseStudy, uploadDocuments, isLoading, error, reset: resetApiError } = useReferral();
-  const [referralId, setReferralId] = useState<number | null>(null);
 
-  // Get current date and time for defaults
+  const {
+    createReferral,
+    getReferral,
+    updateReferral,
+    createCaseStudy,
+     getCaseStudy,        // 👈 নতুন
+  updateCaseStudy, 
+    uploadDocuments,
+    isLoading,
+    error,
+    reset: resetApiError,
+  } = useReferral();
+
+  const [referralId, setReferralId] = useState<number | null>(null);
+  const [referralDataLoaded, setReferralDataLoaded] = useState(false);
+
   const getCurrentDate = (): string => {
     const now = new Date();
     const year = now.getFullYear();
@@ -69,7 +87,6 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ onAddReferral }) => 
     return `${hours}:${minutes}`;
   };
 
-  // State for all tabs
   const [referralState, setReferralState] = useState({
     victimFirstName: '',
     victimLastName: '',
@@ -78,10 +95,10 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ onAddReferral }) => 
     victimPhone: '',
     reporterFirstName: '',
     reporterLastName: '',
-    relationship: 'Relative',
+    relationship: '',
     reporterAddress: '',
     reporterCity: '',
-    reporterState: 'CA',
+    reporterState: '',
     reporterZip: '',
     reporterPhone: '',
     reporterEmail: '',
@@ -93,7 +110,7 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ onAddReferral }) => 
     wantsToBeInformed: false,
     incidentAddress: '',
     incidentCity: '',
-    incidentState: 'CA',
+    incidentState: '',
     incidentCounty: '',
     incidentZip: '',
     incidentCommunity: '',
@@ -129,13 +146,232 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ onAddReferral }) => 
 
   const [docs, setDocs] = useState<DocumentFile[]>([]);
   const [isAgreed, setIsAgreed] = useState(false);
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [errors, setErrors] = useState<ReferralTabErrors>({});
+  const [caseStudyErrors, setCaseStudyErrors] = useState<CaseStudyTabErrors>({});
   const [savedTabs, setSavedTabs] = useState<{ [key: string]: boolean }>({
     referral: false,
     casestudy: false,
-    documents: false
+    documents: false,
   });
 
+  // ✅ URL থেকে referralId নিন
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get('referralId');
+    if (id) {
+      setIsEditing(true);
+      setReferralId(Number(id));
+      fetchReferralData(Number(id));
+    }
+  }, []);
+
+  // ✅ GET ডাটা ফেচ করুন
+// components/PublicPortal/index.tsx - fetchReferralData ফাংশন আপডেট করুন
+
+const fetchReferralData = async (id: number) => {
+  try {
+    setIsSaving(true);
+    const response = await getReferral(id);
+    
+    if (response.isSuccess && response.data) {
+      const data = response.data;
+      console.log('✅ Fetched referral data:', data);
+
+      // ----- রেফারেল স্টেট সেট করুন (আগের মতো) -----
+      setReferralState({
+        victimFirstName: data.VictimFirstName || '',
+        victimLastName: data.VictimLastName || '',
+        approximateAge: data.ApproximateAge || 0,
+        victimAddress: data.VictimAddress || '',
+        victimPhone: data.Phone || '',
+        reporterFirstName: data.ReporterFirstName || '',
+        reporterLastName: data.ReporterLastName || '',
+        relationship: data.APS_ReporterRelationshipLookupId ? 
+          getRelationshipText(data.APS_ReporterRelationshipLookupId) : '',
+        reporterAddress: data.ReporterAddress || '',
+        reporterCity: data.ReporterCity || '',
+        reporterState: data.ReporterStateLookupId ? 
+          getStateText(data.ReporterStateLookupId) : '',
+        reporterZip: data.ReporterZip || '',
+        reporterPhone: data.ReporterPhone || '',
+        reporterEmail: data.ReporterEmail || '',
+        organization: data.ReporterOrganization || '',
+        jobTitle: data.ReporterJobTitle || '',
+        hasWitnessed: data.HasReporterWitnessed || false,
+        availableForMoreInfo: data.IsReporterAvailableForMoreInfo || false,
+        anonymous: data.IsReporterWantsTobeAnonomyous || false,
+        wantsToBeInformed: data.IsReporterInterestedInUpdates || false,
+        incidentAddress: data.Address || '',
+        incidentCity: data.City || '',
+        incidentState: data.StateLookupId ? 
+          getStateText(data.StateLookupId) : '',
+        incidentCounty: data.CountyLookupId ? 
+          getCountyText(data.CountyLookupId) : '',
+        incidentZip: data.Zip || '',
+        incidentCommunity: data.CommunityLookupId ? 
+          getCommunityText(data.CommunityLookupId) : '',
+        incidentComments: data.Comments || '',
+      });
+
+      // ----- কেস স্টাডি ডাটা ফেচ করুন -----
+      try {
+        const caseStudyResponse = await getCaseStudy(id);
+        console.log('📌 Full CaseStudy Response:', caseStudyResponse);
+        
+        if (caseStudyResponse.isSuccess && caseStudyResponse.data) {
+          let caseData = caseStudyResponse.data;
+          
+          // ✅ সঠিকভাবে কেস স্টাডি অবজেক্ট এক্সট্র্যাক্ট করুন
+          // সার্ভার যেভাবে ডাটা দিচ্ছে সেভাবে চেক করুন
+          if (caseData.CaseStudy) {
+            caseData = caseData.CaseStudy;
+          } else if (caseData.Data && caseData.Data.CaseStudy) {
+            caseData = caseData.Data.CaseStudy;
+          } else if (caseData.PublicReferral && caseData.PublicReferral.CaseStudy) {
+            caseData = caseData.PublicReferral.CaseStudy;
+          }
+          
+          // যদি caseData তে IncidentDesc না থাকে, তাহলে কেস স্টাডি নেই
+          if (!caseData.IncidentDesc && !caseData.incidentDesc) {
+            console.log('No case study data found');
+            setExistingCaseStudy(null);
+            // কেস স্টাডি স্টেট খালি করুন
+            setCaseStudyState({
+              incidentDescription: '',
+              incidentLocation: '',
+              abuseDuration: '',
+              lastSeen: '',
+              shortTermMemoryLoss: null,
+              hasCausedHarm: null,
+              harmDescription: '',
+              healthFunctioning: '',
+              inDangerOfDeath: null,
+              deathDescription: '',
+              atRiskOfHarm: null,
+              riskDescription: '',
+              witnessedIncident: null,
+              howBecameAware: '',
+              adultKnowsReport: null,
+              adultReaction: '',
+              familyKnowsReport: null,
+              familyMembersKnow: '',
+              involvedWithDSS: null,
+              dssDescription: '',
+              otherReports: null,
+              otherReportsDescription: '',
+              lawEnforcementInvolved: null,
+              lawEnforcementDescription: '',
+            });
+          } else {
+            console.log('✅ Extracted case study data:', caseData);
+            console.log('✅ Case Study ID:', caseData.Id || caseData.id || caseData.caseStudyId);
+            
+            // ✅ existingCaseStudy তে কেস স্টাডির ডাটা রাখুন
+            setExistingCaseStudy(caseData);
+            
+            // ✅ কেস স্টাডি স্টেট সেট করুন
+            setCaseStudyState({
+              incidentDescription: caseData.IncidentDesc || caseData.incidentDesc || '',
+              incidentLocation: caseData.IncidentLocation || caseData.incidentLocation || '',
+              abuseDuration: caseData.LengthOfAbuse || caseData.lengthOfAbuse || '',
+              lastSeen: caseData.LastSeenOn || caseData.lastSeenOn || '',
+              shortTermMemoryLoss: caseData.ShortTermMemoryLoss ?? caseData.shortTermMemoryLoss ?? null,
+              hasCausedHarm: caseData.CausedHarm ?? caseData.causedHarm ?? null,
+              harmDescription: caseData.CausedHarmDesc || caseData.causedHarmDesc || '',
+              healthFunctioning: caseData.HealthFunctioning || caseData.healthFunctioning || '',
+              inDangerOfDeath: caseData.IsInDangerOfDeath ?? caseData.isInDangerOfDeath ?? null,
+              deathDescription: caseData.DangerOfDeathDesc || caseData.dangerOfDeathDesc || '',
+              atRiskOfHarm: caseData.IsInRiskOfHarm ?? caseData.isInRiskOfHarm ?? null,
+              riskDescription: caseData.RiskOfIrreparableHarm || caseData.riskOfIrreparableHarm || '',
+              witnessedIncident: caseData.HasWitnessed ?? caseData.hasWitnessed ?? null,
+              howBecameAware: caseData.NotWitnessedDesc || caseData.notWitnessedDesc || '',
+              adultKnowsReport: caseData.AdultKnowsAboutReport ?? caseData.adultKnowsAboutReport ?? null,
+              adultReaction: caseData.AdultReactionOnReport || caseData.adultReactionOnReport || '',
+              familyKnowsReport: caseData.FamilyKnowsAboutReport ?? caseData.familyKnowsAboutReport ?? null,
+              familyMembersKnow: caseData.WhoKnowsInFamilyDesc || caseData.whoKnowsInFamilyDesc || '',
+              involvedWithDSS: caseData.HasInvolvedWithDDS ?? caseData.hasInvolvedWithDDS ?? null,
+              dssDescription: caseData.InvolvementWithDDSDesc || caseData.involvementWithDDSDesc || '',
+              otherReports: caseData.OthersReporters ?? caseData.othersReporters ?? null,
+              otherReportsDescription: caseData.OthersReportersDesc || caseData.othersReportersDesc || '',
+              lawEnforcementInvolved: caseData.HasPoliceInvoled ?? caseData.hasPoliceInvoled ?? null,
+              lawEnforcementDescription: caseData.LawEnforementDesc || caseData.lawEnforementDesc || '',
+            });
+          }
+        } else {
+          console.log('No existing case study found');
+          setExistingCaseStudy(null);
+        }
+      } catch (caseError) {
+        console.log('Error fetching case study:', caseError);
+        setExistingCaseStudy(null);
+      }
+      
+      setSavedTabs({ referral: true, casestudy: true, documents: true });
+      setReferralId(id);
+      setReferralDataLoaded(true);
+    }
+  } catch (error) {
+    console.error('❌ Failed to fetch referral:', error);
+  } finally {
+    setIsSaving(false);
+  }
+};
+
+// ✅ হেল্পার ফাংশন - Relationship টেক্সট পাওয়ার জন্য
+const getRelationshipText = (id: number): string => {
+  const map: { [key: number]: string } = {
+    4: 'Relative',
+    5: 'Friend',
+    6: 'Staff in Licensed Facility',
+    7: 'Home Health Staff',
+    8: 'Other'
+  };
+  return map[id] || '';
+};
+
+// ✅ হেল্পার ফাংশন - State টেক্সট পাওয়ার জন্য
+const getStateText = (id: number): string => {
+  const states = [
+    'Minnesota', 'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California',
+    'Colorado', 'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii',
+    'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana',
+    'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Mississippi', 'Missouri',
+    'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey', 'New Mexico',
+    'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon',
+    'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota', 'Tennessee',
+    'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington', 'West Virginia',
+    'Wisconsin', 'Wyoming'
+  ];
+  return states[id - 1] || '';
+};
+
+// ✅ হেল্পার ফাংশন - County টেক্সট পাওয়ার জন্য
+const getCountyText = (id: number): string => {
+  const counties = [
+    'Beltrami County', 'Clearwater', 'Aitkin', 'Anoka', 'Becker', 'Benton',
+    'Big Stone', 'Blue Earth', 'Brown', 'Carver', 'Carlton', 'Cass',
+    'Chippewa', 'Chisago', 'Clay', 'Cottonwood', 'Crow Wing', 'Dakota',
+    'Dodge', 'Douglas', 'Faribault', 'Fillmore', 'Freeborn', 'Goodhue',
+    'Grant', 'Hennepin', 'Houston', 'Hubbard', 'Isanti', 'Itasca',
+    'Jackson', 'Kanabec', 'Kandiyohi', 'Kittson', 'Koochiching',
+    'Lac qui Parle', 'Lake', 'Lake of the Woods', 'Le Sueur', 'Lincoln',
+    'Mahnomen', 'Marshall', 'Martin', 'McLeod', 'Meeker', 'Mille Lacs',
+    'Morrison', 'Mower', 'Murray', 'Nicollet', 'Nobles', 'Norman',
+    'Olmsted', 'Otter Tail', 'Pennington', 'Pine', 'Pipestone', 'Polk',
+    'Pope', 'Ramsey', 'Red Lake', 'Redwood', 'Renville', 'Rice', 'Rock',
+    'Roseau', 'St. Louis', 'Scott', 'Sherburne', 'Sibley', 'Stearns',
+    'Steele', 'Stevens', 'Swift', 'Todd', 'Traverse', 'Wabasha', 'Wadena',
+    'Waseca', 'Washington', 'Wilkin', 'Winona', 'Wright', 'Yellow Medicine',
+    'Cook'
+  ];
+  return counties[id - 1] || '';
+};
+
+// ✅ হেল্পার ফাংশন - Community টেক্সট পাওয়ার জন্য
+const getCommunityText = (id: number): string => {
+  const communities = ['Redby', 'Red Lake', 'Little Rock', 'Ponemah', 'Other', 'Unknown'];
+  return communities[id - 1] || '';
+};
   // --- Success Modal Helpers ---
   const showSuccessModal = (
     type: SuccessModalState['type'],
@@ -176,140 +412,252 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ onAddReferral }) => 
 
   // --- Validation ---
   const validateReferralTab = (): boolean => {
-    const newErrors: { [key: string]: string } = {};
-    if (!referralState.victimFirstName) newErrors.victimFirstName = "Victim's first name required";
-    if (!referralState.victimLastName) newErrors.victimLastName = "Victim's last name required";
-    if (!referralState.reporterFirstName) newErrors.reporterFirstName = 'First name required';
-    if (!referralState.reporterLastName) newErrors.reporterLastName = 'Last name required';
-    if (!referralState.reporterPhone) newErrors.reporterPhone = 'Phone required';
-    if (!referralState.reporterEmail) newErrors.reporterEmail = 'Email required';
-    if (!referralState.incidentAddress) newErrors.incidentAddress = 'Incident address required';
+    const newErrors: ReferralTabErrors = {};
+
+    if (!referralState.victimFirstName?.trim()) {
+      newErrors.victimFirstName = "Victim's first name is required";
+    }
+    if (!referralState.victimLastName?.trim()) {
+      newErrors.victimLastName = "Victim's last name is required";
+    }
+    if (!referralState.reporterFirstName?.trim()) {
+      newErrors.reporterFirstName = 'Reporter first name is required';
+    }
+    if (!referralState.reporterLastName?.trim()) {
+      newErrors.reporterLastName = 'Reporter last name is required';
+    }
+    if (!referralState.relationship) {
+      newErrors.relationship = 'Please select a relationship with the adult';
+    }
+
+    const cleanPhone = referralState.reporterPhone.replace(/\D/g, '');
+    if (!cleanPhone) {
+      newErrors.reporterPhone = 'Reporter phone number is required';
+    } else if (cleanPhone.length !== 10) {
+      newErrors.reporterPhone = 'Phone number must be exactly 10 digits';
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!referralState.reporterEmail) {
+      newErrors.reporterEmail = 'Reporter email is required';
+    } else if (!emailRegex.test(referralState.reporterEmail)) {
+      newErrors.reporterEmail = 'Please enter a valid email address';
+    }
+
+    if (!referralState.incidentAddress?.trim()) {
+      newErrors.incidentAddress = 'Incident address is required';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const validateCaseStudyTab = (): boolean => {
-    const newErrors: { [key: string]: string } = {};
-    if (!caseStudyState.incidentDescription) newErrors.incidentDescription = 'Description required';
-    if (!caseStudyState.incidentLocation) newErrors.incidentLocation = 'Location required';
-    setErrors(newErrors);
+    const newErrors: CaseStudyTabErrors = {};
+
+    if (!caseStudyState.incidentDescription?.trim()) {
+      newErrors.incidentDescription = 'Incident description is required';
+    }
+    if (!caseStudyState.incidentLocation?.trim()) {
+      newErrors.incidentLocation = 'Incident location is required';
+    }
+
+    if (caseStudyState.hasCausedHarm === null || caseStudyState.hasCausedHarm === undefined) {
+      newErrors.hasCausedHarm = 'Please select Yes, No, or Unknown';
+    }
+    if (caseStudyState.inDangerOfDeath === null || caseStudyState.inDangerOfDeath === undefined) {
+      newErrors.inDangerOfDeath = 'Please select Yes, No, or Unknown';
+    }
+    if (caseStudyState.atRiskOfHarm === null || caseStudyState.atRiskOfHarm === undefined) {
+      newErrors.atRiskOfHarm = 'Please select Yes, No, or Unknown';
+    }
+    if (caseStudyState.witnessedIncident === null || caseStudyState.witnessedIncident === undefined) {
+      newErrors.witnessedIncident = 'Please select Yes, No, or Unknown';
+    }
+    if (caseStudyState.adultKnowsReport === null || caseStudyState.adultKnowsReport === undefined) {
+      newErrors.adultKnowsReport = 'Please select Yes, No, or Unknown';
+    }
+    if (caseStudyState.familyKnowsReport === null || caseStudyState.familyKnowsReport === undefined) {
+      newErrors.familyKnowsReport = 'Please select Yes, No, or Unknown';
+    }
+    if (caseStudyState.involvedWithDSS === null || caseStudyState.involvedWithDSS === undefined) {
+      newErrors.involvedWithDSS = 'Please select Yes, No, or Unknown';
+    }
+    if (caseStudyState.otherReports === null || caseStudyState.otherReports === undefined) {
+      newErrors.otherReports = 'Please select Yes, No, or Unknown';
+    }
+    if (
+      caseStudyState.lawEnforcementInvolved === null ||
+      caseStudyState.lawEnforcementInvolved === undefined
+    ) {
+      newErrors.lawEnforcementInvolved = 'Please select Yes, No, or Unknown';
+    }
+
+    setCaseStudyErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  // --- Data Preparation Functions ---
-  const prepareReferralData = (): CreateReferralRequest => {
-    const formatPhone = (phone: string): string => phone.replace(/\D/g, '');
-    const formatZip = (zip: string): string => zip.replace(/\D/g, '');
+  // --- Data Preparation ---
+// PublicPortal.tsx
 
-    const currentDate = getCurrentDate();
-    const currentTime = getCurrentTime();
+const prepareReferralData = (): CreateReferralRequest => {
+  const formatPhone = (phone: string): string => phone.replace(/\D/g, '');
+  const formatZip = (zip: string): string => zip.replace(/\D/g, '');
 
-    return {
-      reporterFirstName: referralState.reporterFirstName || 'John',
-      reporterLastName: referralState.reporterLastName || 'Doe',
-      reporterAddress: referralState.reporterAddress || '123 Main Street, Apt 4B',
-      reporterCity: referralState.reporterCity || 'New York',
-      reporterZip: formatZip(referralState.reporterZip) || '10001',
-      reporterPhone: formatPhone(referralState.reporterPhone) || '5551234567',
-      reporterEmail: referralState.reporterEmail || 'john.doe@example.com',
-      reporterOrganization: referralState.organization || 'Community Watch Group',
-      reporterJobTitle: referralState.jobTitle || 'Volunteer',
-      isReporterAvailableForMoreInfo: referralState.availableForMoreInfo || true,
-      isReporterWantsTobeAnonomyous: referralState.anonymous || false,
-      isReporterInterestedInUpdates: referralState.wantsToBeInformed || true,
-      hasReporterWitnessed: referralState.hasWitnessed || true,
-      address: referralState.incidentAddress || '456 Elm Street',
-      city: referralState.incidentCity || 'New York',
-      zip: formatZip(referralState.incidentZip) || '10002',
-      reportDate: currentDate,
-      reportTime: currentTime,
-      reportingMethod: 'Electronically',
-      reportingSource: 2,
-      isAdultAbuseBeingReported: true,
-      comments: referralState.incidentComments || 'Observed severe neglect and poor living conditions.',
-      aps_ClientId: 1,
-      reporterGenderLookupId: 1,
-      reporterStateLookupId: 32,
-      apS_ReporterRelationshipLookupId: 4,
-      stateLookupId: 32,
-      countyLookupId: 5,
-      submitById: 105,
-      isSubmitted: false,
-      decision: 0,
-      preferredInformingMethod: 1,
-      nickName: `${referralState.reporterFirstName || 'John'} ${referralState.reporterLastName || 'Doe'}`.trim() || 'John Doe',
+  const currentDate = getCurrentDate();
+  const currentTime = getCurrentTime();
+
+  const data: CreateReferralRequest = {
+    reporterFirstName: referralState.reporterFirstName || 'John',
+    reporterLastName: referralState.reporterLastName || 'Doe',
+    reporterAddress: referralState.reporterAddress || '123 Main Street, Apt 4B',
+    reporterCity: referralState.reporterCity || 'New York',
+    reporterZip: formatZip(referralState.reporterZip) || '10001',
+    reporterPhone: formatPhone(referralState.reporterPhone) || '5551234567',
+    reporterEmail: referralState.reporterEmail || 'john.doe@example.com',
+    reporterOrganization: referralState.organization || 'Community Watch Group',
+    reporterJobTitle: referralState.jobTitle || 'Volunteer',
+    isReporterAvailableForMoreInfo: referralState.availableForMoreInfo || true,
+    isReporterWantsTobeAnonomyous: referralState.anonymous || false,
+    isReporterInterestedInUpdates: referralState.wantsToBeInformed || true,
+    hasReporterWitnessed: referralState.hasWitnessed || true,
+    address: referralState.incidentAddress || '456 Elm Street',
+    city: referralState.incidentCity || 'New York',
+    zip: formatZip(referralState.incidentZip) || '10002',
+    reportDate: currentDate,
+    reportTime: currentTime,
+    reportingMethod: 'Electronically',
+    reportingSource: 2,
+    isAdultAbuseBeingReported: true,
+    comments: referralState.incidentComments || 'Observed severe neglect and poor living conditions.',
+    aps_ClientId: 1,
+    reporterGenderLookupId: 1,
+    reporterStateLookupId: 32,
+    apS_ReporterRelationshipLookupId: 4,
+    stateLookupId: 32,
+    countyLookupId: 5,
+    submitById: 105,
+    isSubmitted: false,
+    decision: 0,
+    preferredInformingMethod: 1,
+    nickName: `${referralState.reporterFirstName || 'John'} ${referralState.reporterLastName || 'Doe'}`.trim() || 'John Doe',
+    victimFirstName: referralState.victimFirstName || '',
+    victimLastName: referralState.victimLastName || '',
+    approximateAge: Number(referralState.approximateAge) || 0,
+    victimAddress: referralState.victimAddress || '',
+    phone: formatPhone(referralState.victimPhone) || '',
+    CreatedBy: 105,
+    CreatedOn: new Date().toISOString(),
+    RecordedBy: 105,
+  };
+
+  // ✅ শুধুমাত্র PUT রিকোয়েস্টের জন্য Id যোগ করুন
+  if (isEditing && referralId) {
+    data.Id = referralId;
+  }
+
+  return data;
+};
+
+// components/PublicPortal/index.tsx
+
+// components/PublicPortal/index.tsx
+
+// components/PublicPortal/index.tsx
+
+// components/PublicPortal/index.tsx
+
+const prepareCaseStudyData = (): CreateCaseStudyRequest => {
+  const data: CreateCaseStudyRequest = {
+    incidentLocation: caseStudyState.incidentLocation || '',
+    incidentDesc: caseStudyState.incidentDescription || '',
+    abuseNeglectOrExploitationDesc: caseStudyState.incidentDescription || '',
+    lengthOfAbuse: caseStudyState.abuseDuration || '',
+    healthFunctioning: caseStudyState.healthFunctioning || '',
+    lastSeenOn: caseStudyState.lastSeen || '',
+    causedHarm: caseStudyState.hasCausedHarm || false,
+    causedHarmDesc: caseStudyState.harmDescription || '',
+    isInDangerOfDeath: caseStudyState.inDangerOfDeath || false,
+    dangerOfDeathDesc: caseStudyState.deathDescription || '',
+    isInRiskOfHarm: caseStudyState.atRiskOfHarm || false,
+    riskOfIrreparableHarm: caseStudyState.riskDescription || '',
+    hasWitnessed: caseStudyState.witnessedIncident || false,
+    notWitnessedDesc: caseStudyState.howBecameAware || '',
+    adultKnowsAboutReport: caseStudyState.adultKnowsReport || false,
+    adultReactionOnReport: caseStudyState.adultReaction || '',
+    familyKnowsAboutReport: caseStudyState.familyKnowsReport || false,
+    whoKnowsInFamilyDesc: caseStudyState.familyMembersKnow || '',
+    hasInvolvedWithDDS: caseStudyState.involvedWithDSS || false,
+    involvementWithDDSDesc: caseStudyState.dssDescription || '',
+    othersReporters: caseStudyState.otherReports || false,
+    othersReportersDesc: caseStudyState.otherReportsDescription || '',
+    hasPoliceInvoled: caseStudyState.lawEnforcementInvolved || false,
+    lawEnforementDesc: caseStudyState.lawEnforcementDescription || '',
+    directionsToCurrentLocation: '',
+    isSubmitted: false,
+    publicReferralId: referralId || 0,
+    CreatedBy: 105,
+    CreatedOn: new Date().toISOString(),
+    RecordedBy: 105,
+  };
+
+  return data;
+};
+  // ✅ SAVE/UPDATE Referral Tab
+// PublicPortal.tsx - saveReferralTab ফাংশন আপডেট করুন
+
+const saveReferralTab = async (): Promise<void> => {
+  setErrors({});
+
+  if (!validateReferralTab()) {
+    const firstErrorField = Object.keys(errors)[0];
+    if (firstErrorField) {
+      const element = document.querySelector(`[name="${firstErrorField}"]`);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+    return;
+  }
+
+  try {
+    setIsSaving(true);
+    const referralData = prepareReferralData();
+    let response;
+
+    if (isEditing && referralId) {
+      // ✅ UPDATE - PUT
+      console.log('🔄 Updating existing referral ID:', referralId);
+      console.log('📤 Update Data:', referralData);
       
-      // Victim Details
-      victimFirstName: referralState.victimFirstName || '',
-      victimLastName: referralState.victimLastName || '',
-      approximateAge: Number(referralState.approximateAge) || 0,
-      victimAddress: referralState.victimAddress || '',
-      phone: formatPhone(referralState.victimPhone) || '',
-
-      // Required Audit Fields to prevent 400 Bad Request
-      CreatedBy: 105,
-      CreatedOn: new Date().toISOString(),
-      RecordedBy: 105,
-    };
-  };
-
- const prepareCaseStudyData = (): CreateCaseStudyRequest => {
-    return {
-      incidentLocation: caseStudyState.incidentLocation || '',
-      incidentDesc: caseStudyState.incidentDescription || '',
-      abuseNeglectOrExploitationDesc: caseStudyState.incidentDescription || '',
-      lengthOfAbuse: caseStudyState.abuseDuration || '',
-      healthFunctioning: caseStudyState.healthFunctioning || '',
-      lastSeenOn: caseStudyState.lastSeen || '',
-      causedHarm: caseStudyState.hasCausedHarm || false,
-      causedHarmDesc: caseStudyState.harmDescription || '',
-      isInDangerOfDeath: caseStudyState.inDangerOfDeath || false,
-      dangerOfDeathDesc: caseStudyState.deathDescription || '',
-      isInRiskOfHarm: caseStudyState.atRiskOfHarm || false,
-      riskOfIrreparableHarm: caseStudyState.riskDescription || '',
-      hasWitnessed: caseStudyState.witnessedIncident || false,
-      notWitnessedDesc: caseStudyState.howBecameAware || '',
-      adultKnowsAboutReport: caseStudyState.adultKnowsReport || false,
-      adultReactionOnReport: caseStudyState.adultReaction || '',
-      familyKnowsAboutReport: caseStudyState.familyKnowsReport || false,
-      whoKnowsInFamilyDesc: caseStudyState.familyMembersKnow || '',
-      hasInvolvedWithDDS: caseStudyState.involvedWithDSS || false,
-      involvementWithDDSDesc: caseStudyState.dssDescription || '',
-      othersReporters: caseStudyState.otherReports || false,
-      othersReportersDesc: caseStudyState.otherReportsDescription || '',
-      hasPoliceInvoled: caseStudyState.lawEnforcementInvolved || false,
-      lawEnforementDesc: caseStudyState.lawEnforcementDescription || '',
-      directionsToCurrentLocation: '',
-      isSubmitted: false,
-      publicReferralId: referralId || 0,
-
-      // এই অডিট ফিল্ডগুলো যোগ করতে হবে (যা সার্ভার ভ্যালিডেশনে চাচ্ছে)
-      CreatedBy: 105,
-      CreatedOn: new Date().toISOString(),
-      RecordedBy: 105,
-    };
-  };
-
-  // --- Save Referral Tab ---
-  const saveReferralTab = async (): Promise<void> => {
-    if (!validateReferralTab()) {
-      alert('⚠️ Please fill in all required fields before saving.');
-      return;
-    }
-
-    const cleanPhone = referralState.reporterPhone.replace(/\D/g, '');
-    if (cleanPhone.length !== 10) {
-      alert('⚠️ Phone number must be exactly 10 digits. Please enter a valid phone number.');
-      return;
-    }
-
-    try {
-      const referralData = prepareReferralData();
-      const response = await submitReferral(referralData);
+      // ✅ নিশ্চিত করুন যে ডাটাতে Id আছে
+      const updateData = {
+        ...referralData,
+        Id: referralId, // 👈 স্পষ্টভাবে Id যোগ করুন
+      };
+      
+      response = await updateReferral(referralId, updateData);
+      
+      if (response && response.isSuccess) {
+        setSavedTabs((prev) => ({ ...prev, referral: true }));
+        await fetchReferralData(referralId);
+        
+        showSuccessModal(
+          'referral',
+          '✅ Referral Information Updated!',
+          'Your referral information has been successfully updated.',
+          { id: `#${referralId}` },
+          () => setActiveTab('casestudy')
+        );
+      }
+    } else {
+      // ✅ CREATE - POST
+      console.log('📝 Creating new referral');
+      response = await createReferral(referralData);
 
       if (response && response.isSuccess) {
         let newReferralId: number | null = null;
-        
+
         if (typeof response.data === 'number') {
           newReferralId = response.data;
         } else if (typeof response.data === 'string') {
@@ -321,171 +669,215 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ onAddReferral }) => 
             newReferralId = parseInt(String((response.data as any).Data));
           } else if ('referralId' in response.data) {
             newReferralId = parseInt(String((response.data as any).referralId));
-          } else if ('publicReferralId' in response.data) {
-            newReferralId = parseInt(String((response.data as any).publicReferralId));
           }
         }
-        
+
         if (newReferralId) {
           setReferralId(newReferralId);
+          
+          const url = new URL(window.location.href);
+          url.searchParams.set('referralId', String(newReferralId));
+          window.history.replaceState({}, '', url.toString());
+          
+          await (newReferralId);
+          setIsEditing(true);
+          setSavedTabs((prev) => ({ ...prev, referral: true }));
+          
+          showSuccessModal(
+            'referral',
+            '✅ Referral Information Saved!',
+            'Your referral information has been successfully submitted to the system.',
+            { id: `#${newReferralId}` },
+            () => setActiveTab('casestudy')
+          );
         } else {
           throw new Error('Could not extract Referral ID from response');
         }
-        
-        setSavedTabs((prev) => ({ ...prev, referral: true }));
-        
-        const updatedReferral: Referral = {
-          id: String(newReferralId || ''),
-          ...referralState,
-          ...caseStudyState,
-          status: 'Draft',
-          submittedAt: new Date().toISOString(),
-          reviewStartedAt: null,
-          acceptedAt: null,
-          rejectedAt: null,
-          linkedClientId: null,
-          documents: docs,
-          hasCausedHarm: caseStudyState.hasCausedHarm || false,
-          harmDescription: caseStudyState.harmDescription || '',
-          healthFunctioning: caseStudyState.healthFunctioning || '',
-          inDangerOfDeath: caseStudyState.inDangerOfDeath || false,
-          deathDescription: caseStudyState.deathDescription || '',
-          atRiskOfHarm: caseStudyState.atRiskOfHarm || false,
-          riskDescription: caseStudyState.riskDescription || '',
-          witnessedIncident: caseStudyState.witnessedIncident || false,
-          howBecameAware: caseStudyState.howBecameAware || '',
-          adultKnowsReport: caseStudyState.adultKnowsReport || false,
-          adultReaction: caseStudyState.adultReaction || '',
-          familyKnowsReport: caseStudyState.familyKnowsReport || false,
-          familyMembersKnow: caseStudyState.familyMembersKnow || '',
-          involvedWithDSS: caseStudyState.involvedWithDSS || false,
-          dssDescription: caseStudyState.dssDescription || '',
-          otherReports: caseStudyState.otherReports || false,
-          otherReportsDescription: caseStudyState.otherReportsDescription || '',
-          lawEnforcementInvolved: caseStudyState.lawEnforcementInvolved || false,
-          lawEnforcementDescription: caseStudyState.lawEnforcementDescription || '',
-        };
-        
-        onAddReferral(updatedReferral);
-
-        showSuccessModal(
-          'referral',
-          '✅ Referral Information Saved!',
-          'Your referral information has been successfully submitted to the system.',
-          { id: newReferralId ? `#${newReferralId}` : undefined },
-          () => {
-            setActiveTab('casestudy');
-          }
-        );
       } else {
         throw new Error(response?.message || 'Failed to save referral');
       }
-    } catch (error) {
-      console.error('Save referral error:', error);
-      alert(`❌ Failed to save referral: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
-  };
+  } catch (error) {
+    console.error('Save referral error:', error);
+    setErrors((prev) => ({
+      ...prev,
+      _form: `Failed to ${isEditing ? 'update' : 'save'} referral: ${
+        error instanceof Error ? error.message : 'Unknown error'
+      }`,
+    }));
+  } finally {
+    setIsSaving(false);
+  }
+};
 
-  // --- Save Case Study Tab ---
-  const saveCaseStudyTab = async (): Promise<void> => {
-    if (!validateCaseStudyTab()) {
-      alert('⚠️ Please fill in all required fields before saving.');
-      return;
-    }
+  // --- Save Case Study ---
+// ✅ Save Case Study ফাংশন আপডেট করুন
+// components/PublicPortal/index.tsx
 
-    if (!referralId) {
-      alert('⚠️ Please save the Referral Information first before saving Case Study.');
-      return;
-    }
+// components/PublicPortal/index.tsx
 
-    try {
-      const caseStudyData = prepareCaseStudyData();
-      const response = await submitCaseStudy(caseStudyData);
+const saveCaseStudyTab = async (): Promise<void> => {
+  setCaseStudyErrors({});
 
-      if (response.isSuccess) {
-        setSavedTabs((prev) => ({ ...prev, casestudy: true }));
-        
-        showSuccessModal(
-          'casestudy',
-          '📋 Case Study Saved Successfully!',
-          'Your case study information has been successfully submitted to the system.',
-          { id: response.data ? `#${response.data}` : undefined },
-          () => {
-            setActiveTab('documents');
-          }
-        );
-      } else {
-        throw new Error(response.message || 'Failed to save case study');
+  if (!validateCaseStudyTab()) {
+    const firstErrorField = Object.keys(caseStudyErrors)[0];
+    if (firstErrorField) {
+      const element = document.querySelector(`[name="${firstErrorField}"]`);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
-    } catch (error) {
-      console.error('Save case study error:', error);
-      alert(`❌ Failed to save case study: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
-  };
-
-  // --- Save Documents Tab (Backend API Integration Added) ---
-// PublicPortal/index.tsx - saveDocumentsTab ফাংশন
-
-// ✅ Save Documents Tab - Hardcoded Referral ID 8 ব্যবহার করুন
-// PublicPortal/index.tsx - saveDocumentsTab ফাংশন
-
-const saveDocumentsTab = async (): Promise<void> => {
-  // ✅ Dynamic Referral ID ব্যবহার করুন
-  const currentReferralId = referralId;
-  
-  console.log('📌 Using referral ID:', currentReferralId);
-
-  if (!currentReferralId) {
-    alert('⚠️ No referral ID available. Please save the Referral Info tab first.');
     return;
   }
 
-  if (docs.length === 0) {
-    alert('⚠️ Please add at least one document before saving.');
-    return;
-  }
-
-  // ✅ প্রতিটি ডকুমেন্টে file আছে কিনা চেক করুন
-  const invalidDocs = docs.filter(d => !d.file || !(d.file instanceof File));
-  if (invalidDocs.length > 0) {
-    console.error('❌ Invalid documents found:', invalidDocs.map(d => d.fileName));
-    alert(`⚠️ ${invalidDocs.length} document(s) have no file object. Please remove them and re-add.`);
+  if (!referralId) {
+    setCaseStudyErrors({
+      _form: 'Please save the Referral Information first before saving Case Study.',
+    });
     return;
   }
 
   try {
-    console.log('📤 Saving documents with Referral ID:', currentReferralId);
-    console.log('📄 Documents to upload:', docs.length);
-    
-    // ✅ Dynamic ID দিয়ে ডকুমেন্ট আপলোড করুন
-    const response = await uploadDocuments(docs, currentReferralId);
+    setIsSaving(true);
+    const caseStudyData = prepareCaseStudyData();
+    let response;
 
-    if (response.isSuccess) {
-      setSavedTabs((prev) => ({ ...prev, documents: true }));
+    const hasExisting = existingCaseStudy !== null;
+
+    console.log('📌 Has existing case study:', hasExisting);
+    console.log('📌 Is editing mode:', isEditing);
+    console.log('📌 Referral ID:', referralId);
+    console.log('📌 existingCaseStudy:', existingCaseStudy);
+
+    if (hasExisting && isEditing) {
+      // ✅ কেস স্টাডির নিজস্ব আইডি বের করুন (সার্ভার যে ফিল্ডে দেয়)
+      const caseStudyId = existingCaseStudy.Id || existingCaseStudy.id || existingCaseStudy.caseStudyId;
       
+      if (!caseStudyId) {
+        console.error('❌ No case study ID found in existingCaseStudy');
+        // আইডি না থাকলে নতুন তৈরি করুন
+        const createData = {
+          ...caseStudyData,
+          publicReferralId: Number(referralId),
+        };
+        response = await createCaseStudy(createData);
+      } else {
+        console.log('🔄 Updating case study with ID:', caseStudyId);
+        
+        // ✅ আপডেট ডাটা তৈরি করুন (কেস স্টাডির আইডি যোগ করুন)
+        const updateData = {
+          ...caseStudyData,
+          id: Number(caseStudyId),
+          publicReferralId: Number(referralId),
+        };
+        
+        console.log('📤 Update Data:', JSON.stringify(updateData, null, 2));
+        
+        // ✅ কেস স্টাডির আইডি দিয়ে PUT কল করুন
+        response = await updateCaseStudy(caseStudyId, updateData);
+      }
+    } else {
+      // ✅ CREATE - POST
+      console.log('📝 Creating new case study');
+      const createData = {
+        ...caseStudyData,
+        publicReferralId: Number(referralId),
+      };
+      response = await createCaseStudy(createData);
+    }
+
+    if (response && response.isSuccess) {
+      setSavedTabs((prev) => ({ ...prev, casestudy: true }));
+      await fetchReferralData(referralId);
+
       showSuccessModal(
-        'documents',
-        '📎 Documents Saved Successfully!',
-        `${docs.length} document(s) have been successfully uploaded and saved.`,
-        { documentCount: docs.length }
+        'casestudy',
+        hasExisting && isEditing ? '📋 Case Study Updated!' : '📋 Case Study Saved!',
+        hasExisting && isEditing 
+          ? 'Your case study information has been successfully updated.'
+          : 'Your case study information has been successfully saved.',
+        { id: `#${referralId}` },
+        () => {
+          setActiveTab('documents');
+        }
       );
     } else {
-      throw new Error(response.message || 'Failed to upload documents');
+      throw new Error(response?.message || 'Failed to save case study');
     }
   } catch (error) {
-    console.error('❌ Save documents error:', error);
-    alert(`❌ Failed to save documents: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    console.error('Save case study error:', error);
+    setCaseStudyErrors((prev) => ({
+      ...prev,
+      _form: `Failed to save case study: ${error instanceof Error ? error.message : 'Unknown error'}`,
+    }));
+  } finally {
+    setIsSaving(false);
   }
 };
+  // --- Save Documents ---
+  const saveDocumentsTab = async (): Promise<void> => {
+    if (!referralId) {
+      setErrors({
+        _form: 'No referral ID available. Please save the Referral Info tab first.',
+      });
+      return;
+    }
 
+    if (docs.length === 0) {
+      setErrors({
+        _form: 'Please add at least one document before saving.',
+      });
+      return;
+    }
+
+    const invalidDocs = docs.filter((d) => !d.file || !(d.file instanceof File));
+    if (invalidDocs.length > 0) {
+      setErrors({
+        _form: `${invalidDocs.length} document(s) have no file object. Please remove them and re-add.`,
+      });
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      const response = await uploadDocuments(docs, referralId);
+
+      if (response.isSuccess) {
+        setSavedTabs((prev) => ({ ...prev, documents: true }));
+
+        showSuccessModal(
+          'documents',
+          '📎 Documents Saved Successfully!',
+          `${docs.length} document(s) have been successfully uploaded and saved.`,
+          { documentCount: docs.length }
+        );
+      } else {
+        throw new Error(response.message || 'Failed to upload documents');
+      }
+    } catch (error) {
+      console.error('❌ Save documents error:', error);
+      setErrors((prev) => ({
+        ...prev,
+        _form: `Failed to save documents: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      }));
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // --- Handle Submit ---
   const handleSubmit = async (): Promise<void> => {
     if (!isAgreed) {
-      alert('⚠️ Please agree to the disclaimer before submitting.');
+      setErrors({
+        _form: 'Please agree to the disclaimer before submitting.',
+      });
       return;
     }
 
     if (!savedTabs.referral || !savedTabs.casestudy || !savedTabs.documents) {
-      alert('⚠️ Please save all sections before submitting the referral.');
+      setErrors({
+        _form: 'Please save all sections (Referral Info, Case Study, and Documents) before submitting.',
+      });
       return;
     }
 
@@ -520,18 +912,22 @@ const saveDocumentsTab = async (): Promise<void> => {
       otherReportsDescription: caseStudyState.otherReportsDescription || '',
       lawEnforcementInvolved: caseStudyState.lawEnforcementInvolved || false,
       lawEnforcementDescription: caseStudyState.lawEnforcementDescription || '',
+      referralId: '',
+      publicReferralId: ''
     };
 
     onAddReferral(referralData);
     setGeneratedId(trackingId);
     setShowSubmitModal(false);
-    
+
     showSuccessModal(
       'submission',
       '🎉 Referral Submitted Successfully!',
       'Your referral has been securely lodged. Please save the reference token for future tracking.',
       { id: trackingId }
     );
+
+    setSubmitted(true);
   };
 
   const resetForm = (): void => {
@@ -544,6 +940,29 @@ const saveDocumentsTab = async (): Promise<void> => {
     }
     closeSuccessModal();
   };
+
+  // --- Render Form Error ---
+  const renderFormError = (errorMessage?: string): React.ReactNode => {
+    if (!errorMessage) return null;
+
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 flex items-start gap-3 animate-in slide-in-from-top duration-300">
+        <span className="text-red-500 text-lg">⚠️</span>
+        <p className="text-sm text-red-700 flex-1">{errorMessage}</p>
+        <button
+          onClick={() => {
+            setErrors((prev) => ({ ...prev, _form: '' }));
+            setCaseStudyErrors((prev) => ({ ...prev, _form: '' }));
+          }}
+          className="text-red-400 hover:text-red-600 transition text-lg"
+        >
+          ×
+        </button>
+      </div>
+    );
+  };
+
+  const isLoadingState = isLoading || isSaving;
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-sky-50/40 to-indigo-50/30">
@@ -559,9 +978,9 @@ const saveDocumentsTab = async (): Promise<void> => {
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="flex items-center">
-              <img 
-                src="https://www.beratensoftware.com/Images/Logos/BeratenLogo.svg" 
-                alt="Beraten Logo" 
+              <img
+                src="https://www.beratensoftware.com/Images/Logos/BeratenLogo.svg"
+                alt="Beraten Logo"
                 className="h-8 md:h-10 w-auto object-contain"
               />
             </div>
@@ -582,6 +1001,16 @@ const saveDocumentsTab = async (): Promise<void> => {
       {/* Main Content */}
       <main className="relative flex-1 flex flex-col items-center p-4 md:p-8 w-full">
         <div className="w-full max-w-5xl mx-auto">
+          {/* Editing Mode Indicator */}
+          {isEditing && referralDataLoaded && (
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-4 flex items-center gap-3">
+              <span className="text-blue-600 text-lg">✏️</span>
+              <p className="text-sm text-blue-700">
+                <strong>Editing Mode:</strong> You are updating referral #{referralId}
+              </p>
+            </div>
+          )}
+
           {/* Tabs Navigation */}
           <div className="flex flex-wrap gap-2 border-b border-gray-200 pb-2 mb-6">
             <TabButton
@@ -610,43 +1039,52 @@ const saveDocumentsTab = async (): Promise<void> => {
           {/* Tab Content */}
           <div className="bg-white rounded-3xl shadow-xl border border-gray-200 overflow-hidden">
             <div className="p-6 md:p-8">
-              {error && (
-                <ErrorAlert error={error} onDismiss={resetApiError} />
-              )}
-              
+              {error && <ErrorAlert error={error} onDismiss={resetApiError} />}
+
+              {errors._form && renderFormError(errors._form)}
+              {caseStudyErrors._form && renderFormError(caseStudyErrors._form)}
+
               {activeTab === 'referral' && (
                 <ReferralTab
                   state={referralState}
                   setState={setReferralState}
                   errors={errors}
-                  isLoading={isLoading}
+                  setErrors={setErrors}
+                  isLoading={isLoadingState}
                   onSave={saveReferralTab}
+                  referralId={referralId}
+                  isEditing={isEditing}
                 />
               )}
-              
+
               {activeTab === 'casestudy' && (
                 <CaseStudyTab
                   state={caseStudyState}
                   setState={setCaseStudyState}
-                  errors={errors}
-                  isLoading={isLoading}
+                  errors={caseStudyErrors}
+                  setErrors={setCaseStudyErrors}
+                  isLoading={isLoadingState}
                   referralId={referralId}
                   isReferralSaved={savedTabs.referral}
                   onSave={saveCaseStudyTab}
+                   isEditing={isEditing}  // 👈 এই লাইন যোগ করুন
+    existingCaseStudy={existingCaseStudy}  // 👈 এই লাইন যোগ করুন
                 />
               )}
-              
-{activeTab === 'documents' && (
-  <DocumentsTab
-    docs={docs}
-    onFileUpload={handleFileUpload}
-    onRemoveFile={removeFile}
-    onSave={saveDocumentsTab}
-    isReferralSaved={savedTabs.referral}
-    publicReferralId={referralId || undefined}  // ✅ Dynamic ID
-    referralId={referralId || undefined}        // ✅ Dynamic ID
-  />
-)}
+
+              {activeTab === 'documents' && (
+                <DocumentsTab
+                  docs={docs}
+                  onFileUpload={handleFileUpload}
+                  onRemoveFile={removeFile}
+                  onSave={saveDocumentsTab}
+                  isReferralSaved={savedTabs.referral}
+                  publicReferralId={referralId || undefined}
+                  referralId={referralId || undefined}
+                  errors={errors}
+                  setErrors={setErrors}
+                />
+              )}
             </div>
           </div>
         </div>
@@ -657,9 +1095,15 @@ const saveDocumentsTab = async (): Promise<void> => {
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-xs text-gray-500">© 2026 Red Lake Nation APS. All rights reserved.</p>
           <div className="flex items-center gap-6 text-xs">
-            <a href="#" className="text-gray-500 hover:text-gray-700 transition">Privacy Policy</a>
-            <a href="#" className="text-gray-500 hover:text-gray-700 transition">Terms of Service</a>
-            <a href="#" className="text-gray-500 hover:text-gray-700 transition">Contact Support</a>
+            <a href="#" className="text-gray-500 hover:text-gray-700 transition">
+              Privacy Policy
+            </a>
+            <a href="#" className="text-gray-500 hover:text-gray-700 transition">
+              Terms of Service
+            </a>
+            <a href="#" className="text-gray-500 hover:text-gray-700 transition">
+              Contact Support
+            </a>
           </div>
         </div>
       </footer>
@@ -672,7 +1116,7 @@ const saveDocumentsTab = async (): Promise<void> => {
           resetApiError();
         }}
         onSubmit={handleSubmit}
-        isLoading={isLoading}
+        isLoading={isLoadingState}
         isAgreed={isAgreed}
         setIsAgreed={setIsAgreed}
         error={error}
@@ -711,8 +1155,8 @@ const saveDocumentsTab = async (): Promise<void> => {
               <p className="font-mono font-bold text-blue-600 text-lg tracking-wider">{generatedId}</p>
               <p className="text-[10px] text-gray-400 mt-1">Please save this token for future reference</p>
             </div>
-            <button 
-              onClick={resetForm} 
+            <button
+              onClick={resetForm}
               className="mt-6 px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-sm font-bold uppercase rounded-xl shadow-lg hover:shadow-xl transition transform hover:scale-105"
             >
               New Referral

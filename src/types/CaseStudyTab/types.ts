@@ -1,11 +1,11 @@
-// CaseStudyTab/types.ts
+// types/CaseStudyTab/types.ts
 
 export interface CaseStudyTabState {
-  // ❌ REMOVED: incidentDate, incidentTime
   incidentDescription: string;
   incidentLocation: string;
   abuseDuration: string;
   lastSeen: string;
+  shortTermMemoryLoss: boolean | null;
   hasCausedHarm: boolean | null;
   harmDescription: string;
   healthFunctioning: string;
@@ -25,11 +25,33 @@ export interface CaseStudyTabState {
   otherReportsDescription: string;
   lawEnforcementInvolved: boolean | null;
   lawEnforcementDescription: string;
-  shortTermMemoryLoss: boolean | null;
 }
 
 export interface CaseStudyTabErrors {
-  // ❌ REMOVED: incidentDate
   incidentDescription?: string;
   incidentLocation?: string;
+  abuseDuration?: string;
+  lastSeen?: string;
+  shortTermMemoryLoss?: string;
+  hasCausedHarm?: string;
+  harmDescription?: string;
+  healthFunctioning?: string;
+  inDangerOfDeath?: string;
+  deathDescription?: string;
+  atRiskOfHarm?: string;
+  riskDescription?: string;
+  witnessedIncident?: string;
+  howBecameAware?: string;
+  adultKnowsReport?: string;
+  adultReaction?: string;
+  familyKnowsReport?: string;
+  familyMembersKnow?: string;
+  involvedWithDSS?: string;
+  dssDescription?: string;
+  otherReports?: string;
+  otherReportsDescription?: string;
+  lawEnforcementInvolved?: string;
+  lawEnforcementDescription?: string;
+  _form?: string;
+  [key: string]: string | undefined;
 }

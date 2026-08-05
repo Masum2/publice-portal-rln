@@ -1,9 +1,9 @@
 // DocumentsTab/index.tsx
-
 import React, { useState } from 'react';
 import type { DocumentFile } from '../../types';
 import { api } from '../../services/api';
 import { SaveButton } from '../SaveButton';
+import type { ReferralTabErrors } from '../../types/ReferralTab/types';
 
 interface DocumentsTabProps {
   docs: DocumentFile[];
@@ -13,6 +13,8 @@ interface DocumentsTabProps {
   isReferralSaved: boolean;
   publicReferralId?: number;
   referralId?: number;
+  errors?: ReferralTabErrors;
+  setErrors?: React.Dispatch<React.SetStateAction<ReferralTabErrors>>;
 }
 
 export const DocumentsTab: React.FC<DocumentsTabProps> = ({
@@ -23,6 +25,8 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
   isReferralSaved,
   publicReferralId,
   referralId,
+  errors = {},
+  setErrors = () => {},
 }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [documentName, setDocumentName] = useState('');
@@ -30,8 +34,8 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
   const [documentDate, setDocumentDate] = useState(new Date().toISOString().split('T')[0]);
   const [comments, setComments] = useState('');
   const [isUploading, setIsUploading] = useState(false);
+  const [localErrors, setLocalErrors] = useState<{ [key: string]: string }>({});
 
-  // ✅ Dynamic Referral ID - props থেকে নিন
   const effectiveReferralId = publicReferralId || referralId || 0;
 
   console.log('📌 DocumentsTab Props:', {
@@ -46,9 +50,10 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       if (file.size > 10 * 1024 * 1024) {
-        alert('Max file size allowed is 10MB');
+        setLocalErrors({ file: 'Max file size allowed is 10MB' });
         return;
       }
+      setLocalErrors({});
       setSelectedFile(file);
       if (!documentName) {
         setDocumentName(file.name.split('.')[0]);
@@ -56,31 +61,40 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
     }
   };
 
-  const handleAddDocument = (e: React.FormEvent) => {
-    e.preventDefault();
+  const validateDocumentForm = (): boolean => {
+    const newErrors: { [key: string]: string } = {};
+    
     if (!selectedFile) {
-      alert('Please select a file.');
-      return;
+      newErrors.file = 'Please select a file to upload';
     }
-    if (!documentName) {
-      alert('Document Name is required.');
-      return;
+    if (!documentName.trim()) {
+      newErrors.documentName = 'Document name is required';
     }
     if (!documentDate) {
-      alert('Document Date is required.');
+      newErrors.documentDate = 'Document date is required';
+    }
+    
+    setLocalErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleAddDocument = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateDocumentForm()) {
       return;
     }
 
     onFileUpload({
-      file: selectedFile,
-      fileName: selectedFile.name,
+      file: selectedFile!,
+      fileName: selectedFile!.name,
       documentName,
       documentType: Number(documentType),
       documentDate,
       comments,
       name: documentName,
-      type: selectedFile.name.split('.').pop() || 'pdf',
-      fileType: selectedFile.type || 'application/octet-stream',
+      type: selectedFile!.name.split('.').pop() || 'pdf',
+      fileType: selectedFile!.type || 'application/octet-stream',
       fileData: '',
     });
 
@@ -88,19 +102,23 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
     setSelectedFile(null);
     setDocumentName('');
     setComments('');
+    setLocalErrors({});
   };
 
-  // ✅ Save Documents - Dynamic Referral ID ব্যবহার করুন
   const handleSaveDocuments = async () => {
     console.log('📌 Using referral ID in DocumentsTab:', effectiveReferralId);
 
     if (!effectiveReferralId) {
-      alert('⚠️ No referral ID available. Please save the Referral Info tab first.');
+      if (setErrors) {
+        setErrors({ _form: 'No referral ID available. Please save the Referral Info tab first.' });
+      }
       return;
     }
 
     if (docs.length === 0) {
-      alert('⚠️ No documents to upload.');
+      if (setErrors) {
+        setErrors({ _form: 'No documents to upload. Please add at least one document.' });
+      }
       return;
     }
 
@@ -109,27 +127,43 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
       console.log('📤 Starting document upload with ID:', effectiveReferralId);
       console.log('📄 Documents to upload:', docs.length);
 
-      // ✅ Dynamic ID দিয়ে আপলোড করুন
       const response = await api.uploadMultiplePortalDocuments(docs, effectiveReferralId);
       
       console.log('✅ Upload Response:', response);
 
       if (response.isSuccess) {
-        alert(`✅ All ${docs.length} documents uploaded successfully!`);
         onSave();
       } else {
         if (response.data?.uploadedCount > 0) {
-          alert(`⚠️ ${response.data.uploadedCount} out of ${docs.length} documents uploaded successfully.`);
+          if (setErrors) {
+            setErrors({ 
+              _form: `${response.data.uploadedCount} out of ${docs.length} documents uploaded successfully.` 
+            });
+          }
         } else {
           throw new Error(response.message || 'Failed to upload documents');
         }
       }
     } catch (error: any) {
       console.error('❌ Upload Error:', error);
-      alert(`❌ Failed to upload documents: ${error.message || 'Unknown error'}`);
+      if (setErrors) {
+        setErrors({ _form: `Failed to upload documents: ${error.message || 'Unknown error'}` });
+      }
     } finally {
       setIsUploading(false);
     }
+  };
+
+  const renderError = (field: string): React.ReactNode => {
+    const error = localErrors[field] || errors[field as keyof ReferralTabErrors];
+    if (error) {
+      return (
+        <p className="text-xs text-red-500 font-semibold mt-1 flex items-center gap-1 animate-in slide-in-from-top duration-200">
+          <span>⚠️</span> {error}
+        </p>
+      );
+    }
+    return null;
   };
 
   return (
@@ -140,46 +174,79 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
             ? 'bg-green-50 border border-green-200 text-green-800' 
             : 'bg-amber-50 border border-amber-200 text-amber-800'
         }`}>
-          {effectiveReferralId > 0 ? (
-            `✅ Using Referral ID: ${effectiveReferralId}`
-          ) : (
-            '⚠️ Please save Referral Info tab first to get Referral ID'
-          )}
+{!effectiveReferralId ? (
+  <span>⚠️ Please save the Referral Info tab first to get a Referral ID.</span>
+) : (
+  <span>✅ Ready to upload document.</span>
+)}
         </div>
+
+        {/* Form-level error */}
+        {errors._form && (
+          <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm flex items-start gap-3">
+            <span className="text-red-500">⚠️</span>
+            <p className="flex-1">{errors._form}</p>
+            <button
+              onClick={() => {
+                if (setErrors) {
+                  setErrors((prev) => ({ ...prev, _form: '' }));
+                }
+              }}
+              className="text-red-400 hover:text-red-600 transition"
+            >
+              ✕
+            </button>
+          </div>
+        )}
 
         {/* File Add Form */}
         <form onSubmit={handleAddDocument} className="bg-slate-50 border border-gray-200 rounded-2xl p-6 space-y-4">
           <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wider">Upload New Document</h3>
           
-          <div className="relative border-2 border-dashed border-gray-300 rounded-xl p-6 text-center bg-white hover:bg-gray-50 transition cursor-pointer">
+          <div className={`relative border-2 border-dashed rounded-xl p-6 text-center bg-white transition ${
+            localErrors.file ? 'border-red-500 bg-red-50' : 'border-gray-300 hover:bg-gray-50'
+          }`}>
             <input
               type="file"
               onChange={handleFileSelect}
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx"
             />
             <div className="text-3xl mb-2">📁</div>
             <p className="text-sm font-bold text-gray-700">
               {selectedFile ? `Selected: ${selectedFile.name}` : 'Drop file here or click to browse'}
             </p>
-            <p className="text-xs text-gray-500 mt-1">Supported: PDF, JPG, PNG (Max 10MB)</p>
+            <p className="text-xs text-gray-500 mt-1">Supported: PDF, JPG, PNG, DOC, XLS (Max 10MB)</p>
+            {renderError('file')}
           </div>
 
           {selectedFile && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">Document Name *</label>
+                <label className="block text-xs font-bold text-gray-700 mb-1">
+                  Document Name <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="text"
                   value={documentName}
-                  onChange={(e) => setDocumentName(e.target.value)}
+                  onChange={(e) => {
+                    setDocumentName(e.target.value);
+                    if (localErrors.documentName) {
+                      setLocalErrors((prev) => ({ ...prev, documentName: '' }));
+                    }
+                  }}
                   placeholder="e.g. Medical Report"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
-                  required
+                  className={`w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 ${
+                    localErrors.documentName ? 'border-red-500' : 'border-gray-300'
+                  }`}
                 />
+                {renderError('documentName')}
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">Document Type *</label>
+                <label className="block text-xs font-bold text-gray-700 mb-1">
+                  Document Type <span className="text-red-500">*</span>
+                </label>
                 <select
                   value={documentType}
                   onChange={(e) => setDocumentType(Number(e.target.value))}
@@ -193,14 +260,23 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">Document Date *</label>
+                <label className="block text-xs font-bold text-gray-700 mb-1">
+                  Document Date <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="date"
                   value={documentDate}
-                  onChange={(e) => setDocumentDate(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
-                  required
+                  onChange={(e) => {
+                    setDocumentDate(e.target.value);
+                    if (localErrors.documentDate) {
+                      setLocalErrors((prev) => ({ ...prev, documentDate: '' }));
+                    }
+                  }}
+                  className={`w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 ${
+                    localErrors.documentDate ? 'border-red-500' : 'border-gray-300'
+                  }`}
                 />
+                {renderError('documentDate')}
               </div>
 
               <div>

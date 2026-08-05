@@ -18,6 +18,7 @@ function App() {
         <Route path="/" element={<HomeScreen />} />
         <Route path="/portal" element={<PublicPortal onAddReferral={handleAddReferral} />} />
         <Route path="*" element={<HomeScreen />} />
+        
       </Routes>
     </Router>
   );

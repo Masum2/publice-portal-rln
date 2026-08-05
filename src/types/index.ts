@@ -1,4 +1,6 @@
 export interface Referral {
+  referralId: string;
+  publicReferralId: string;
   id: string;
   victimFirstName: string;
   victimLastName: string;
@@ -124,7 +126,7 @@ export interface CreateReferralRequest {
   approximateAge: number;
   victimAddress: string;
   phone: string;
-  
+  Id?: number; 
   // 400 Bad Request এড়ানোর জন্য জরুরি ফিল্ডসমূহ
   CreatedBy: number;
   CreatedOn: string;
@@ -158,10 +160,14 @@ export interface CreateCaseStudyRequest {
   lawEnforementDesc: string;
   directionsToCurrentLocation: string;
   isSubmitted: boolean;
-  publicReferralId: number;
+
   CreatedBy: number;
   CreatedOn: string;
   RecordedBy: number;
+    id?: number;                // কেস স্টাডির আইডি (UPDATE এর জন্য)
+  caseStudyId?: number;       // বিকল্প নাম
+  publicReferralId?: number;  // রেফারেল আইডি (যার সাথে সম্পর্কিত)
+
 }
 
 export interface ApiResponse<T> {

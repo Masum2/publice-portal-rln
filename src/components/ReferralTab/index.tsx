@@ -1,3 +1,4 @@
+// components/PublicPortal/ReferralTab.tsx
 import React from 'react';
 import { User, MapPin } from 'lucide-react';
 
@@ -5,45 +6,157 @@ import type { ReferralTabErrors, ReferralTabState } from '../../types/ReferralTa
 import { SaveButton } from '../SaveButton';
 
 const STATES = [
-  'Minnesota', 'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California',
-  'Colorado', 'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii',
-  'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana',
-  'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Mississippi', 'Missouri',
-  'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey', 'New Mexico',
-  'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon',
-  'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota', 'Tennessee',
-  'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington', 'West Virginia',
-  'Wisconsin', 'Wyoming'
+  'Minnesota',
+  'Alabama',
+  'Alaska',
+  'Arizona',
+  'Arkansas',
+  'California',
+  'Colorado',
+  'Connecticut',
+  'Delaware',
+  'Florida',
+  'Georgia',
+  'Hawaii',
+  'Idaho',
+  'Illinois',
+  'Indiana',
+  'Iowa',
+  'Kansas',
+  'Kentucky',
+  'Louisiana',
+  'Maine',
+  'Maryland',
+  'Massachusetts',
+  'Michigan',
+  'Mississippi',
+  'Missouri',
+  'Montana',
+  'Nebraska',
+  'Nevada',
+  'New Hampshire',
+  'New Jersey',
+  'New Mexico',
+  'New York',
+  'North Carolina',
+  'North Dakota',
+  'Ohio',
+  'Oklahoma',
+  'Oregon',
+  'Pennsylvania',
+  'Rhode Island',
+  'South Carolina',
+  'South Dakota',
+  'Tennessee',
+  'Texas',
+  'Utah',
+  'Vermont',
+  'Virginia',
+  'Washington',
+  'West Virginia',
+  'Wisconsin',
+  'Wyoming',
 ];
 
-const COMMUNITIES = [
-  'Redby', 'Red Lake', 'Little Rock', 'Ponemah', 'Other', 'Unknown'
-];
+const COMMUNITIES = ['Redby', 'Red Lake', 'Little Rock', 'Ponemah', 'Other', 'Unknown'];
 
 const COUNTIES = [
-  'Beltrami County', 'Clearwater', 'Aitkin', 'Anoka', 'Becker', 'Benton',
-  'Big Stone', 'Blue Earth', 'Brown', 'Carver', 'Carlton', 'Cass',
-  'Chippewa', 'Chisago', 'Clay', 'Cottonwood', 'Crow Wing', 'Dakota',
-  'Dodge', 'Douglas', 'Faribault', 'Fillmore', 'Freeborn', 'Goodhue',
-  'Grant', 'Hennepin', 'Houston', 'Hubbard', 'Isanti', 'Itasca',
-  'Jackson', 'Kanabec', 'Kandiyohi', 'Kittson', 'Koochiching',
-  'Lac qui Parle', 'Lake', 'Lake of the Woods', 'Le Sueur', 'Lincoln',
-  'Mahnomen', 'Marshall', 'Martin', 'McLeod', 'Meeker', 'Mille Lacs',
-  'Morrison', 'Mower', 'Murray', 'Nicollet', 'Nobles', 'Norman',
-  'Olmsted', 'Otter Tail', 'Pennington', 'Pine', 'Pipestone', 'Polk',
-  'Pope', 'Ramsey', 'Red Lake', 'Redwood', 'Renville', 'Rice', 'Rock',
-  'Roseau', 'St. Louis', 'Scott', 'Sherburne', 'Sibley', 'Stearns',
-  'Steele', 'Stevens', 'Swift', 'Todd', 'Traverse', 'Wabasha', 'Wadena',
-  'Waseca', 'Washington', 'Wilkin', 'Winona', 'Wright', 'Yellow Medicine',
-  'Cook'
+  'Beltrami County',
+  'Clearwater',
+  'Aitkin',
+  'Anoka',
+  'Becker',
+  'Benton',
+  'Big Stone',
+  'Blue Earth',
+  'Brown',
+  'Carver',
+  'Carlton',
+  'Cass',
+  'Chippewa',
+  'Chisago',
+  'Clay',
+  'Cottonwood',
+  'Crow Wing',
+  'Dakota',
+  'Dodge',
+  'Douglas',
+  'Faribault',
+  'Fillmore',
+  'Freeborn',
+  'Goodhue',
+  'Grant',
+  'Hennepin',
+  'Houston',
+  'Hubbard',
+  'Isanti',
+  'Itasca',
+  'Jackson',
+  'Kanabec',
+  'Kandiyohi',
+  'Kittson',
+  'Koochiching',
+  'Lac qui Parle',
+  'Lake',
+  'Lake of the Woods',
+  'Le Sueur',
+  'Lincoln',
+  'Mahnomen',
+  'Marshall',
+  'Martin',
+  'McLeod',
+  'Meeker',
+  'Mille Lacs',
+  'Morrison',
+  'Mower',
+  'Murray',
+  'Nicollet',
+  'Nobles',
+  'Norman',
+  'Olmsted',
+  'Otter Tail',
+  'Pennington',
+  'Pine',
+  'Pipestone',
+  'Polk',
+  'Pope',
+  'Ramsey',
+  'Red Lake',
+  'Redwood',
+  'Renville',
+  'Rice',
+  'Rock',
+  'Roseau',
+  'St. Louis',
+  'Scott',
+  'Sherburne',
+  'Sibley',
+  'Stearns',
+  'Steele',
+  'Stevens',
+  'Swift',
+  'Todd',
+  'Traverse',
+  'Wabasha',
+  'Wadena',
+  'Waseca',
+  'Washington',
+  'Wilkin',
+  'Winona',
+  'Wright',
+  'Yellow Medicine',
+  'Cook',
 ];
 
 interface ReferralTabProps {
   state: ReferralTabState;
   setState: React.Dispatch<React.SetStateAction<ReferralTabState>>;
   errors: ReferralTabErrors;
+  setErrors: React.Dispatch<React.SetStateAction<ReferralTabErrors>>;
   isLoading: boolean;
   onSave: () => void;
+  referralId?: number | string | null;
+  isEditing?: boolean;
 }
 
 const formatPhoneNumber = (value: string) => {
@@ -61,13 +174,19 @@ export const ReferralTab: React.FC<ReferralTabProps> = ({
   state,
   setState,
   errors,
+  setErrors,
   isLoading,
   onSave,
+  referralId,
+  isEditing = false,
 }) => {
   const updateField = <K extends keyof ReferralTabState>(
     key: K,
     value: ReferralTabState[K]
   ) => {
+    if (errors[key as keyof ReferralTabErrors]) {
+      setErrors((prev) => ({ ...prev, [key]: '' }));
+    }
     setState((prev) => ({ ...prev, [key]: value }));
   };
 
@@ -76,7 +195,9 @@ export const ReferralTab: React.FC<ReferralTabProps> = ({
     key: K,
     className?: string
   ) => (
-    <label className={`flex items-center gap-2 text-sm text-gray-700 cursor-pointer ${className || ''}`}>
+    <label
+      className={`flex items-center gap-2 text-sm text-gray-700 cursor-pointer ${className || ''}`}
+    >
       <input
         type="checkbox"
         checked={Boolean(state[key])}
@@ -96,15 +217,27 @@ export const ReferralTab: React.FC<ReferralTabProps> = ({
     updateField(field, formattedValue as ReferralTabState[K]);
   };
 
+  const handleZipChange = <K extends keyof ReferralTabState>(
+    e: React.ChangeEvent<HTMLInputElement>,
+    field: K
+  ) => {
+    const value = e.target.value.replace(/\D/g, '').slice(0, 5);
+    updateField(field, value as ReferralTabState[K]);
+  };
+
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
         {/* ===== VICTIM / CLIENT INFORMATION ===== */}
         <div className="md:col-span-2">
           <h3 className="text-sm font-bold text-purple-600 uppercase tracking-wider flex items-center gap-2">
             <User className="w-4 h-4" />
             Victim / Client Information
+            {referralId && (
+              <span className="ml-2 text-xs font-normal text-gray-500">
+                {isEditing ? `(Editing ID: ${referralId})` : `(Referral ID: ${referralId})`}
+              </span>
+            )}
           </h3>
         </div>
 
@@ -122,7 +255,11 @@ export const ReferralTab: React.FC<ReferralTabProps> = ({
             }`}
             placeholder="First name"
           />
-          {errors.victimFirstName && <p className="text-xs text-red-500 font-semibold mt-1">⚠️ {errors.victimFirstName}</p>}
+          {errors.victimFirstName && (
+            <p className="text-xs text-red-500 font-semibold mt-1 flex items-center gap-1">
+              <span>⚠️</span> {errors.victimFirstName}
+            </p>
+          )}
         </div>
 
         {/* Victim Last Name */}
@@ -139,7 +276,11 @@ export const ReferralTab: React.FC<ReferralTabProps> = ({
             }`}
             placeholder="Last name"
           />
-          {errors.victimLastName && <p className="text-xs text-red-500 font-semibold mt-1">⚠️ {errors.victimLastName}</p>}
+          {errors.victimLastName && (
+            <p className="text-xs text-red-500 font-semibold mt-1 flex items-center gap-1">
+              <span>⚠️</span> {errors.victimLastName}
+            </p>
+          )}
         </div>
 
         {/* Victim Approximate Age */}
@@ -149,8 +290,15 @@ export const ReferralTab: React.FC<ReferralTabProps> = ({
           </label>
           <input
             type="number"
+            min="0"
+            max="150"
             value={state.approximateAge ?? ''}
-            onChange={(e) => updateField('approximateAge', e.target.value ? Number(e.target.value) : 0)}
+            onChange={(e) => {
+              const val = e.target.value ? Number(e.target.value) : 0;
+              if (val >= 0 && val <= 150) {
+                updateField('approximateAge', val);
+              }
+            }}
             className="w-full p-3.5 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition"
             placeholder="Age"
           />
@@ -206,7 +354,11 @@ export const ReferralTab: React.FC<ReferralTabProps> = ({
             }`}
             placeholder="First name"
           />
-          {errors.reporterFirstName && <p className="text-xs text-red-500 font-semibold mt-1">⚠️ {errors.reporterFirstName}</p>}
+          {errors.reporterFirstName && (
+            <p className="text-xs text-red-500 font-semibold mt-1 flex items-center gap-1">
+              <span>⚠️</span> {errors.reporterFirstName}
+            </p>
+          )}
         </div>
 
         <div>
@@ -222,17 +374,23 @@ export const ReferralTab: React.FC<ReferralTabProps> = ({
             }`}
             placeholder="Last name"
           />
-          {errors.reporterLastName && <p className="text-xs text-red-500 font-semibold mt-1">⚠️ {errors.reporterLastName}</p>}
+          {errors.reporterLastName && (
+            <p className="text-xs text-red-500 font-semibold mt-1 flex items-center gap-1">
+              <span>⚠️</span> {errors.reporterLastName}
+            </p>
+          )}
         </div>
 
         <div>
           <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-            Relationship with Adult
+            Relationship with Adult <span className="text-red-500">*</span>
           </label>
           <select
             value={state.relationship}
             onChange={(e) => updateField('relationship', e.target.value)}
-            className="w-full p-3.5 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition"
+            className={`w-full p-3.5 bg-white border rounded-xl text-sm text-gray-700 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition ${
+              errors.relationship ? 'border-red-500' : 'border-gray-200'
+            }`}
           >
             <option value="">Select Relationship</option>
             <option value="Relative">Relative</option>
@@ -241,6 +399,11 @@ export const ReferralTab: React.FC<ReferralTabProps> = ({
             <option value="Home Health Staff">Home Health Staff</option>
             <option value="Other">Other</option>
           </select>
+          {errors.relationship && (
+            <p className="text-xs text-red-500 font-semibold mt-1 flex items-center gap-1">
+              <span>⚠️</span> {errors.relationship}
+            </p>
+          )}
         </div>
 
         <div className="md:col-span-2">
@@ -280,7 +443,9 @@ export const ReferralTab: React.FC<ReferralTabProps> = ({
           >
             <option value="">Select State</option>
             {STATES.map((st) => (
-              <option key={st} value={st}>{st}</option>
+              <option key={st} value={st}>
+                {st}
+              </option>
             ))}
           </select>
         </div>
@@ -292,10 +457,7 @@ export const ReferralTab: React.FC<ReferralTabProps> = ({
           <input
             type="text"
             value={state.reporterZip}
-            onChange={(e) => {
-              const value = e.target.value.replace(/\D/g, '');
-              updateField('reporterZip', value);
-            }}
+            onChange={(e) => handleZipChange(e, 'reporterZip')}
             className="w-full p-3.5 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition"
             placeholder="90210"
             maxLength={5}
@@ -316,7 +478,11 @@ export const ReferralTab: React.FC<ReferralTabProps> = ({
             placeholder="(555) 123-4567"
             maxLength={14}
           />
-          {errors.reporterPhone && <p className="text-xs text-red-500 font-semibold mt-1">⚠️ {errors.reporterPhone}</p>}
+          {errors.reporterPhone && (
+            <p className="text-xs text-red-500 font-semibold mt-1 flex items-center gap-1">
+              <span>⚠️</span> {errors.reporterPhone}
+            </p>
+          )}
         </div>
 
         <div>
@@ -332,7 +498,11 @@ export const ReferralTab: React.FC<ReferralTabProps> = ({
             }`}
             placeholder="name@email.com"
           />
-          {errors.reporterEmail && <p className="text-xs text-red-500 font-semibold mt-1">⚠️ {errors.reporterEmail}</p>}
+          {errors.reporterEmail && (
+            <p className="text-xs text-red-500 font-semibold mt-1 flex items-center gap-1">
+              <span>⚠️</span> {errors.reporterEmail}
+            </p>
+          )}
         </div>
 
         <div>
@@ -390,7 +560,11 @@ export const ReferralTab: React.FC<ReferralTabProps> = ({
             }`}
             placeholder="Street address of incident"
           />
-          {errors.incidentAddress && <p className="text-xs text-red-500 font-semibold mt-1">⚠️ {errors.incidentAddress}</p>}
+          {errors.incidentAddress && (
+            <p className="text-xs text-red-500 font-semibold mt-1 flex items-center gap-1">
+              <span>⚠️</span> {errors.incidentAddress}
+            </p>
+          )}
         </div>
 
         <div>
@@ -417,7 +591,9 @@ export const ReferralTab: React.FC<ReferralTabProps> = ({
           >
             <option value="">Select State</option>
             {STATES.map((st) => (
-              <option key={st} value={st}>{st}</option>
+              <option key={st} value={st}>
+                {st}
+              </option>
             ))}
           </select>
         </div>
@@ -433,7 +609,9 @@ export const ReferralTab: React.FC<ReferralTabProps> = ({
           >
             <option value="">Select County</option>
             {COUNTIES.map((county) => (
-              <option key={county} value={county}>{county}</option>
+              <option key={county} value={county}>
+                {county}
+              </option>
             ))}
           </select>
         </div>
@@ -445,10 +623,7 @@ export const ReferralTab: React.FC<ReferralTabProps> = ({
           <input
             type="text"
             value={state.incidentZip}
-            onChange={(e) => {
-              const value = e.target.value.replace(/\D/g, '');
-              updateField('incidentZip', value);
-            }}
+            onChange={(e) => handleZipChange(e, 'incidentZip')}
             className="w-full p-3.5 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition"
             placeholder="90210"
             maxLength={5}
@@ -466,7 +641,9 @@ export const ReferralTab: React.FC<ReferralTabProps> = ({
           >
             <option value="">Select Community</option>
             {COMMUNITIES.map((community) => (
-              <option key={community} value={community}>{community}</option>
+              <option key={community} value={community}>
+                {community}
+              </option>
             ))}
           </select>
         </div>
@@ -486,9 +663,12 @@ export const ReferralTab: React.FC<ReferralTabProps> = ({
       </div>
 
       <div className="mt-8 pt-6 border-t border-gray-200 flex justify-end">
-        <SaveButton isLoading={isLoading} onSave={onSave} label="Save Referral Info" />
+        <SaveButton
+          isLoading={isLoading}
+          onSave={onSave}
+          label={isEditing ? 'Update Referral Info' : 'Save Referral Info'}
+        />
       </div>
     </>
   );
 };
-

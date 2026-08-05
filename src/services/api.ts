@@ -1,19 +1,19 @@
-import type { 
-  CreateReferralRequest, 
+// services/api.ts
+import type {
+  CreateReferralRequest,
   CreateCaseStudyRequest,
-  ApiResponse, 
+  ApiResponse,
   Referral,
-  DocumentFile
+  DocumentFile,
 } from '../types';
 
 const API_CONFIG = {
   headers: {
     'Content-Type': 'application/json',
-    'Accept': 'application/json',
+    Accept: 'application/json',
   },
 };
 
-// API রেসপন্স অ্যাডাপ্টার
 const adaptApiResponse = <T>(response: any): ApiResponse<T> => {
   if (response.Data !== undefined && response.Status !== undefined) {
     return {
@@ -23,11 +23,11 @@ const adaptApiResponse = <T>(response: any): ApiResponse<T> => {
       errors: response.Status >= 400 ? [response.Message || 'Error'] : undefined,
     };
   }
-  
+
   if (response.isSuccess !== undefined) {
     return response;
   }
-  
+
   return {
     isSuccess: true,
     data: response,
@@ -36,7 +36,7 @@ const adaptApiResponse = <T>(response: any): ApiResponse<T> => {
 };
 
 const handleApiCall = async <T>(
-  url: string, 
+  url: string,
   options?: RequestInit
 ): Promise<ApiResponse<T>> => {
   try {
@@ -48,7 +48,7 @@ const handleApiCall = async <T>(
       console.log('Body:', options.body);
     }
     console.log('═══════════════════════════════════════');
-    
+
     const response = await fetch(url, {
       ...API_CONFIG,
       ...options,
@@ -67,11 +67,12 @@ const handleApiCall = async <T>(
       throw new Error('Server returned empty response');
     }
 
-    const isHtml = responseText.trim().startsWith('<!DOCTYPE') || 
-                   responseText.trim().startsWith('<html') ||
-                   responseText.includes('Microsoft.') ||
-                   responseText.includes('HTTP Error') ||
-                   responseText.includes('Runtime Error');
+    const isHtml =
+      responseText.trim().startsWith('<!DOCTYPE') ||
+      responseText.trim().startsWith('<html') ||
+      responseText.includes('Microsoft.') ||
+      responseText.includes('HTTP Error') ||
+      responseText.includes('Runtime Error');
 
     if (isHtml) {
       console.error('❌ Server returned HTML instead of JSON');
@@ -88,7 +89,8 @@ const handleApiCall = async <T>(
     }
 
     if (!response.ok) {
-      const errorMsg = result.message || result.Message || result.title || `HTTP ${response.status}`;
+      const errorMsg =
+        result.message || result.Message || result.title || `HTTP ${response.status}`;
       throw new Error(errorMsg);
     }
 
@@ -100,33 +102,85 @@ const handleApiCall = async <T>(
 };
 
 export const api = {
-  // Create Referral
-  createReferral: async (data: CreateReferralRequest): Promise<ApiResponse<Referral>> => {
-    console.log('📤 Sending referral data:', JSON.stringify(data, null, 2));
+  // ✅ CREATE Referral - POST
+  createReferral: async (data: CreateReferralRequest): Promise<ApiResponse<any>> => {
+    console.log('📤 Creating new referral...');
     const url = `/beratenApi/public-portal/referrals`;
-    return handleApiCall<Referral>(url, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  },
-
-  // Create Case Study
-  createCaseStudy: async (data: CreateCaseStudyRequest): Promise<ApiResponse<any>> => {
-    console.log('📤 Sending case study data:', JSON.stringify(data, null, 2));
-    const url = `/beratenApi/public-portal/case-studies`;
     return handleApiCall<any>(url, {
       method: 'POST',
       body: JSON.stringify(data),
     });
   },
 
-  // ✅ ডকুমেন্ট আপলোড - List আকারে সরাসরি ফাইল
-  uploadMultiplePortalDocuments: async (docs: DocumentFile[], publicReferralId: number): Promise<ApiResponse<any>> => {
-    console.log('📤 Uploading multiple documents:', {
-      publicReferralId,
-      count: docs.length,
-      documents: docs.map(d => ({ name: d.fileName, size: d.file?.size }))
+  // ✅ GET Referral by ID - GET
+  getReferralById: async (referralId: number | string): Promise<ApiResponse<any>> => {
+    console.log('📤 Fetching referral for ID:', referralId);
+    const url = `/beratenApi/public-portal/referrals/${referralId}`;
+    return handleApiCall<any>(url, {
+      method: 'GET',
     });
+  },
+
+  // ✅ UPDATE Referral - PUT
+updateReferral: async (
+  referralId: number | string,
+  data: CreateReferralRequest
+): Promise<ApiResponse<any>> => {
+  console.log('📤 Updating referral ID:', referralId);
+  console.log('📤 Update Data:', JSON.stringify(data, null, 2));
+  
+  // ✅ নিশ্চিত করুন ডাটাতে Id আছে
+  const updateData = {
+    ...data,
+    Id: Number(referralId), // 👈 স্পষ্টভাবে Id যোগ করুন
+  };
+  
+  const url = `/beratenApi/public-portal/referrals/${referralId}`;
+  return handleApiCall<any>(url, {
+    method: 'PUT',
+    body: JSON.stringify(updateData),
+  });
+},
+
+  // ✅ CREATE Case Study - POST
+  createCaseStudy: async (data: CreateCaseStudyRequest): Promise<ApiResponse<any>> => {
+    console.log('📤 Creating case study...');
+    const url = `/beratenApi/public-portal/case-studies`;
+    return handleApiCall<any>(url, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+// ✅ GET Case Study by Referral ID
+  getCaseStudyByReferralId: async (referralId: number | string): Promise<ApiResponse<any>> => {
+    console.log('📤 Fetching case study for referral ID:', referralId);
+    const url = `/beratenApi/public-portal/case-studies/${referralId}`;
+    return handleApiCall<any>(url, {
+      method: 'GET',
+    });
+  },
+
+  // ✅ UPDATE Case Study - PUT
+updateCaseStudy: async (
+  publicReferralId: number | string,   // এটি আসলে রেফারেল আইডি
+  data: CreateCaseStudyRequest
+): Promise<ApiResponse<any>> => {
+  console.log('📤 Updating case study for publicReferralId:', publicReferralId);
+  console.log('📤 Update Data:', JSON.stringify(data, null, 2));
+  
+  // URL এ publicReferralId ব্যবহার করুন
+  const url = `/beratenApi/public-portal/case-studies/${publicReferralId}`;
+  return handleApiCall<any>(url, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+},
+  // ✅ Upload Documents - POST
+  uploadMultiplePortalDocuments: async (
+    docs: DocumentFile[],
+    publicReferralId: number
+  ): Promise<ApiResponse<any>> => {
+    console.log('📤 Uploading documents...');
 
     if (!docs || docs.length === 0) {
       throw new Error('No documents to upload');
@@ -134,46 +188,30 @@ export const api = {
 
     try {
       const formData = new FormData();
-      
-      // ✅ প্রতিটি ডকুমেন্টের জন্য আলাদা ফিল্ড
+
       for (let i = 0; i < docs.length; i++) {
         const doc = docs[i];
-        
+
         if (!doc.file || !(doc.file instanceof File)) {
           throw new Error(`Invalid file object for ${doc.fileName}`);
         }
 
-        console.log(`📄 Processing document ${i + 1}: ${doc.fileName}`);
-
-        // ✅ fileData ফিল্ডে সরাসরি ফাইল
         formData.append(`request[${i}].fileData`, doc.file, doc.file.name);
-        
-        // ✅ অন্যান্য ফিল্ড (string values)
         formData.append(`request[${i}].id`, '0');
         formData.append(`request[${i}].recordedBy`, '105');
         formData.append(`request[${i}].recordedOn`, new Date().toISOString());
         formData.append(`request[${i}].createdBy`, '105');
         formData.append(`request[${i}].createdOn`, new Date().toISOString());
-        formData.append(`request[${i}].documentDate`, doc.documentDate ? new Date(doc.documentDate).toISOString() : new Date().toISOString());
+        formData.append(
+          `request[${i}].documentDate`,
+          doc.documentDate ? new Date(doc.documentDate).toISOString() : new Date().toISOString()
+        );
         formData.append(`request[${i}].fileType`, doc.file.type || 'application/octet-stream');
         formData.append(`request[${i}].fileName`, doc.fileName || doc.file.name);
-        // ❌ 'file' ফিল্ড বাদ দিন - কারণ এটা IFormFile টাইপের এবং string value নেয় না
-        // formData.append(`request[${i}].file`, doc.file.name);
         formData.append(`request[${i}].documentName`, doc.documentName || 'Document');
         formData.append(`request[${i}].publicReferralId`, String(publicReferralId));
         formData.append(`request[${i}].documentType`, String(doc.documentType || 1));
         formData.append(`request[${i}].comments`, doc.comments || '');
-      }
-
-      // 🔍 Debug: FormData চেক করুন
-      console.log('📦 FormData entries:');
-      for (let pair of formData.entries()) {
-        if (pair[1] instanceof File) {
-          console.log(`  ${pair[0]}: ${pair[1].name} (${pair[1].size} bytes, ${pair[1].type})`);
-        } else {
-          const value = pair[1] as string;
-          console.log(`  ${pair[0]}: ${value}`);
-        }
       }
 
       const url = `/beratenApi/public-portal/documents`;
@@ -183,8 +221,6 @@ export const api = {
         body: formData,
       });
 
-      console.log('📥 Response Status:', response.status);
-      
       const responseText = await response.text();
       console.log('📄 Raw Response:', responseText);
 
@@ -196,87 +232,14 @@ export const api = {
       }
 
       if (!response.ok) {
-        const errorDetail = result.Message || result.message || result.title || `HTTP error! status: ${response.status}`;
+        const errorDetail =
+          result.Message || result.message || result.title || `HTTP error! status: ${response.status}`;
         throw new Error(errorDetail);
       }
 
       return adaptApiResponse(result);
     } catch (error: any) {
-      console.error('❌ Upload Multiple Documents Error:', error);
-      throw error;
-    }
-  },
-
-  // ✅ সিঙ্গেল ডকুমেন্ট আপলোড
-  uploadPortalDocument: async (doc: DocumentFile, publicReferralId: number): Promise<ApiResponse<any>> => {
-    console.log('📤 Uploading single document:', {
-      publicReferralId,
-      documentName: doc.documentName,
-      fileName: doc.fileName,
-      fileSize: doc.file?.size,
-      fileType: doc.file?.type
-    });
-
-    if (!doc.file || !(doc.file instanceof File)) {
-      console.error('❌ Invalid file object:', doc.file);
-      throw new Error('Invalid file object. Please select a valid file.');
-    }
-
-    const formData = new FormData();
-    
-    // ✅ fileData ফিল্ডে সরাসরি ফাইল
-    formData.append('request[0].fileData', doc.file, doc.file.name);
-    
-    // ✅ অন্যান্য ফিল্ড
-    formData.append('request[0].id', '0');
-    formData.append('request[0].recordedBy', '105');
-    formData.append('request[0].recordedOn', new Date().toISOString());
-    formData.append('request[0].createdBy', '105');
-    formData.append('request[0].createdOn', new Date().toISOString());
-    formData.append('request[0].documentDate', doc.documentDate ? new Date(doc.documentDate).toISOString() : new Date().toISOString());
-    formData.append('request[0].fileType', doc.file.type || 'application/octet-stream');
-    formData.append('request[0].fileName', doc.fileName || doc.file.name);
-    // ❌ 'file' ফিল্ড বাদ দিন
-    formData.append('request[0].documentName', doc.documentName || 'Document');
-    formData.append('request[0].publicReferralId', String(publicReferralId));
-    formData.append('request[0].documentType', String(doc.documentType || 1));
-    formData.append('request[0].comments', doc.comments || '');
-
-    console.log('📦 FormData entries:');
-    for (let pair of formData.entries()) {
-      if (pair[1] instanceof File) {
-        console.log(`  ${pair[0]}: ${pair[1].name} (${pair[1].size} bytes)`);
-      } else {
-        console.log(`  ${pair[0]}: ${pair[1]}`);
-      }
-    }
-
-    try {
-      const response = await fetch(`/beratenApi/public-portal/documents`, {
-        method: 'POST',
-        body: formData,
-      });
-
-      console.log('📥 Response Status:', response.status);
-      
-      const responseText = await response.text();
-      console.log('📄 Raw Response:', responseText);
-
-      let result;
-      try {
-        result = responseText ? JSON.parse(responseText) : {};
-      } catch {
-        result = { message: responseText };
-      }
-
-      if (!response.ok) {
-        const errorDetail = result.Message || result.message || result.title || `HTTP error! status: ${response.status}`;
-        throw new Error(errorDetail);
-      }
-
-      return adaptApiResponse(result);
-    } catch (error: any) {
-      console.error('❌ Upload Portal Document Error:', error);
+      console.error('❌ Upload Documents Error:', error);
       throw error;
     }
   },
