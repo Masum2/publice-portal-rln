@@ -9,7 +9,7 @@ interface DocumentsTabProps {
   docs: DocumentFile[];
   onFileUpload: (fileData: Omit<DocumentFile, 'id' | 'uploadedAt'>) => void;
   onRemoveFile: (id: string) => void;
-  onSave: () => void;
+
   isReferralSaved: boolean;
   publicReferralId?: number;
   referralId?: number;
@@ -21,7 +21,7 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
   docs,
   onFileUpload,
   onRemoveFile,
-  onSave,
+ 
   isReferralSaved,
   publicReferralId,
   referralId,
@@ -106,53 +106,69 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
   };
 
   const handleSaveDocuments = async () => {
-    console.log('📌 Using referral ID in DocumentsTab:', effectiveReferralId);
+  console.log('🖱️ Save button clicked');
 
-    if (!effectiveReferralId) {
-      if (setErrors) {
-        setErrors({ _form: 'No referral ID available. Please save the Referral Info tab first.' });
-      }
-      return;
+  if (!effectiveReferralId) {
+    if (setErrors) {
+      setErrors({ _form: 'No referral ID available. Please save the Referral Info tab first.' });
     }
+    return;
+  }
 
-    if (docs.length === 0) {
-      if (setErrors) {
-        setErrors({ _form: 'No documents to upload. Please add at least one document.' });
-      }
-      return;
+  if (docs.length === 0) {
+    if (setErrors) {
+      setErrors({ _form: 'No documents to upload. Please add at least one document.' });
     }
+    return;
+  }
 
-    setIsUploading(true);
-    try {
-      console.log('📤 Starting document upload with ID:', effectiveReferralId);
-      console.log('📄 Documents to upload:', docs.length);
+  // ✅ ডাবল কল প্রতিরোধ
+  if (isUploading) {
+    console.warn('⚠️ Upload already in progress, skipping...');
+    return;
+  }
 
-      const response = await api.uploadMultiplePortalDocuments(docs, effectiveReferralId);
+  setIsUploading(true);
+  try {
+    console.log('📤 Starting document upload with ID:', effectiveReferralId);
+    console.log('📄 Documents to upload:', docs.length);
+
+    const response = await api.uploadMultiplePortalDocuments(docs, effectiveReferralId);
+    
+    console.log('✅ Upload Response:', response);
+
+    if (response.isSuccess) {
+      // ✅ শুধু সাকসেস মেসেজ দেখান, onSave কল করবেন না
+      if (setErrors) {
+        setErrors({ _form: '' });
+      }
       
-      console.log('✅ Upload Response:', response);
-
-      if (response.isSuccess) {
-        onSave();
-      } else {
-        if (response.data?.uploadedCount > 0) {
-          if (setErrors) {
-            setErrors({ 
-              _form: `${response.data.uploadedCount} out of ${docs.length} documents uploaded successfully.` 
-            });
-          }
-        } else {
-          throw new Error(response.message || 'Failed to upload documents');
+      // ✅ সাকসেস মেসেজ দেখান (আপনার Success Modal ব্যবহার করতে পারেন)
+      alert(`✅ ${docs.length} document(s) uploaded successfully!`);
+      
+      // 👇 অথবা আপনার Success Modal কল করুন
+      // showSuccessModal(...);
+      
+    } else {
+      if (response.data?.uploadedCount > 0) {
+        if (setErrors) {
+          setErrors({ 
+            _form: `${response.data.uploadedCount} out of ${docs.length} documents uploaded successfully.` 
+          });
         }
+      } else {
+        throw new Error(response.message || 'Failed to upload documents');
       }
-    } catch (error: any) {
-      console.error('❌ Upload Error:', error);
-      if (setErrors) {
-        setErrors({ _form: `Failed to upload documents: ${error.message || 'Unknown error'}` });
-      }
-    } finally {
-      setIsUploading(false);
     }
-  };
+  } catch (error: any) {
+    console.error('❌ Upload Error:', error);
+    if (setErrors) {
+      setErrors({ _form: `Failed to upload documents: ${error.message || 'Unknown error'}` });
+    }
+  } finally {
+    setIsUploading(false);
+  }
+};
 
   const renderError = (field: string): React.ReactNode => {
     const error = localErrors[field] || errors[field as keyof ReferralTabErrors];

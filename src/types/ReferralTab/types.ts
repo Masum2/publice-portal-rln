@@ -26,6 +26,7 @@ export interface ReferralTabState {
   incidentZip: string;
   incidentCommunity: string;
   incidentComments: string;
+  
 }
 
 // Or explicitly define with index signature
