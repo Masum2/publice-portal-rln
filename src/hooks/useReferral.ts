@@ -6,6 +6,9 @@ import type {
   CreateCaseStudyRequest,
   DocumentFile,
   ApiResponse,
+  ReferralResponse,
+  CaseStudyResponse,
+  UploadDocumentResponse,
 } from '../types';
 
 export const useReferral = () => {
@@ -13,7 +16,7 @@ export const useReferral = () => {
   const [error, setError] = useState<string | null>(null);
 
   // ✅ CREATE Referral
-  const createReferral = async (data: CreateReferralRequest): Promise<ApiResponse<any>> => {
+  const createReferral = async (data: CreateReferralRequest): Promise<ApiResponse<ReferralResponse>> => {
     setIsLoading(true);
     setError(null);
     try {
@@ -21,8 +24,8 @@ export const useReferral = () => {
       const response = await api.createReferral(data);
       console.log('✅ Referral created:', response);
       return response;
-    } catch (err: any) {
-      const errorMsg = err.message || 'Failed to create referral';
+    } catch (err: unknown) {
+      const errorMsg = (err as Error).message || 'Failed to create referral';
       console.error('❌ Create referral error:', errorMsg);
       setError(errorMsg);
       throw err;
@@ -32,7 +35,7 @@ export const useReferral = () => {
   };
 
   // ✅ GET Referral
-  const getReferral = async (referralId: number | string): Promise<ApiResponse<any>> => {
+  const getReferral = async (referralId: number | string): Promise<ApiResponse<ReferralResponse>> => {
     setIsLoading(true);
     setError(null);
     try {
@@ -40,8 +43,8 @@ export const useReferral = () => {
       const response = await api.getReferralById(referralId);
       console.log('✅ Referral fetched:', response);
       return response;
-    } catch (err: any) {
-      const errorMsg = err.message || 'Failed to fetch referral';
+    } catch (err: unknown) {
+      const errorMsg = (err as Error).message || 'Failed to fetch referral';
       console.error('❌ Fetch referral error:', errorMsg);
       setError(errorMsg);
       throw err;
@@ -54,7 +57,7 @@ export const useReferral = () => {
   const updateReferral = async (
     referralId: number | string,
     data: CreateReferralRequest
-  ): Promise<ApiResponse<any>> => {
+  ): Promise<ApiResponse<ReferralResponse>> => {
     setIsLoading(true);
     setError(null);
     try {
@@ -62,8 +65,8 @@ export const useReferral = () => {
       const response = await api.updateReferral(referralId, data);
       console.log('✅ Referral updated:', response);
       return response;
-    } catch (err: any) {
-      const errorMsg = err.message || 'Failed to update referral';
+    } catch (err: unknown) {
+      const errorMsg = (err as Error).message || 'Failed to update referral';
       console.error('❌ Update referral error:', errorMsg);
       setError(errorMsg);
       throw err;
@@ -73,7 +76,7 @@ export const useReferral = () => {
   };
 
   // ✅ CREATE Case Study
-  const createCaseStudy = async (data: CreateCaseStudyRequest): Promise<ApiResponse<any>> => {
+  const createCaseStudy = async (data: CreateCaseStudyRequest): Promise<ApiResponse<CaseStudyResponse>> => {
     setIsLoading(true);
     setError(null);
     try {
@@ -81,8 +84,8 @@ export const useReferral = () => {
       const response = await api.createCaseStudy(data);
       console.log('✅ Case study created:', response);
       return response;
-    } catch (err: any) {
-      const errorMsg = err.message || 'Failed to create case study';
+    } catch (err: unknown) {
+      const errorMsg = (err as Error).message || 'Failed to create case study';
       console.error('❌ Create case study error:', errorMsg);
       setError(errorMsg);
       throw err;
@@ -91,7 +94,7 @@ export const useReferral = () => {
     }
   };
    // ✅ GET Case Study
-  const getCaseStudy = async (referralId: number | string): Promise<ApiResponse<any>> => {
+  const getCaseStudy = async (referralId: number | string): Promise<ApiResponse<CaseStudyResponse>> => {
     setIsLoading(true);
     setError(null);
     try {
@@ -99,8 +102,8 @@ export const useReferral = () => {
       const response = await api.getCaseStudyByReferralId(referralId);
       console.log('✅ Case study fetched:', response);
       return response;
-    } catch (err: any) {
-      const errorMsg = err.message || 'Failed to fetch case study';
+    } catch (err: unknown) {
+      const errorMsg = (err as Error).message || 'Failed to fetch case study';
       console.error('❌ Fetch case study error:', errorMsg);
       setError(errorMsg);
       throw err;
@@ -113,7 +116,7 @@ export const useReferral = () => {
   const updateCaseStudy = async (
     referralId: number | string,
     data: CreateCaseStudyRequest
-  ): Promise<ApiResponse<any>> => {
+  ): Promise<ApiResponse<CaseStudyResponse>> => {
     setIsLoading(true);
     setError(null);
     try {
@@ -121,8 +124,8 @@ export const useReferral = () => {
       const response = await api.updateCaseStudy(referralId, data);
       console.log('✅ Case study updated:', response);
       return response;
-    } catch (err: any) {
-      const errorMsg = err.message || 'Failed to update case study';
+    } catch (err: unknown) {
+      const errorMsg = (err as Error).message || 'Failed to update case study';
       console.error('❌ Update case study error:', errorMsg);
       setError(errorMsg);
       throw err;
@@ -135,7 +138,7 @@ export const useReferral = () => {
   const uploadDocuments = async (
     docs: DocumentFile[],
     publicReferralId: number
-  ): Promise<ApiResponse<any>> => {
+  ): Promise<ApiResponse<UploadDocumentResponse>> => {
     setIsLoading(true);
     setError(null);
 
@@ -152,8 +155,8 @@ export const useReferral = () => {
       const response = await api.uploadMultiplePortalDocuments(docs, publicReferralId);
       console.log('✅ Documents uploaded:', response);
       return response;
-    } catch (err: any) {
-      const errorMsg = err.message || 'Failed to upload documents';
+    } catch (err: unknown) {
+      const errorMsg = (err as Error).message || 'Failed to upload documents';
       console.error('❌ Upload documents error:', errorMsg);
       setError(errorMsg);
       throw err;

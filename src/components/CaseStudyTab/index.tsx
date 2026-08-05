@@ -161,15 +161,7 @@ useEffect(() => {
 
   return (
     <>
-      {/* ✅ Editing Mode Indicator */}
-      {referralId && isEditing && hasExistingCaseStudy && (
-        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl flex items-center gap-3">
-          <span className="text-blue-600 text-lg">✏️</span>
-          <p className="text-sm text-blue-700">
-            <strong>Editing Case Study:</strong> You are updating case study for referral #{referralId}
-          </p>
-        </div>
-      )}
+  
 
       {!referralId && !isReferralSaved && (
         <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-700 text-sm flex items-start gap-3">

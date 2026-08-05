@@ -174,3 +174,154 @@ export interface ApiResponse<T> {
   message: string;
   errors?: string[];
 }
+
+export interface ReferralResponse {
+  Id: number;
+  PublicReferralId: number;
+
+  VictimFirstName: string;
+  VictimLastName: string;
+  ApproximateAge: number;
+  VictimAddress: string;
+  Phone: string;
+
+  ReporterFirstName: string;
+  ReporterLastName: string;
+  ReporterAddress: string;
+  ReporterCity: string;
+  ReporterZip: string;
+  ReporterPhone: string;
+  ReporterEmail: string;
+  ReporterOrganization: string;
+  ReporterJobTitle: string;
+
+  APS_ReporterRelationshipLookupId: number;
+
+  HasReporterWitnessed: boolean;
+  IsReporterAvailableForMoreInfo: boolean;
+  IsReporterWantsTobeAnonomyous: boolean;
+  IsReporterInterestedInUpdates: boolean;
+
+  Address: string;
+  City: string;
+  Zip: string;
+
+  ReporterStateLookupId: number;
+  StateLookupId: number;
+  CountyLookupId: number;
+  CommunityLookupId: number;
+
+  Comments: string;
+}
+export interface CaseStudyResponse {
+  PublicReferralId: number;
+
+  PublicReferral: {
+    Id: number;
+
+    ReporterGenderLookupId: number;
+    ReporterStateLookupId: number;
+    APS_ReporterRelationshipLookupId: number;
+    StateLookupId: number;
+    CommunityLookupId: number | null;
+    CountyLookupId: number;
+
+    VictimFirstName: string | null;
+    VictimLastName: string | null;
+    ApproximateAge: number | null;
+    VictimAddress: string | null;
+    Phone: string | null;
+
+    ReporterFirstName: string;
+    ReporterLastName: string;
+    ReporterAddress: string;
+    ReporterCity: string;
+    ReporterZip: string;
+    ReporterPhone: string;
+    ReporterEmail: string;
+    ReporterOrganization: string;
+    ReporterJobTitle: string;
+
+    IsReporterAvailableForMoreInfo: boolean;
+    IsReporterWantsTobeAnonomyous: boolean;
+    IsReporterInterestedInUpdates: boolean;
+    HasReporterWitnessed: boolean;
+
+    Address: string;
+    City: string;
+    Zip: string;
+    Comments: string;
+
+    ReportDate: string;
+    ReportTime: string;
+    ReportingMethod: string;
+    ReportingSource: number;
+    PreferredInformingMethod: number;
+
+    IsAdultAbuseBeingReported: boolean;
+    IsSubmitted: boolean;
+    Decision: number;
+
+    NickName: string;
+
+    RecordedBy: string;
+    RecordedOn: string;
+    CreatedBy: string;
+    CreatedOn: string;
+  };
+
+  IncidentLocation: string;
+  IncidentDesc: string;
+  AbuseNeglectOrExploitationDesc: string;
+  LengthOfAbuse: string;
+
+  HealthFunctioning: string;
+  LastSeenOn: string;
+
+  CausedHarm: boolean;
+  CausedHarmDesc: string;
+
+  IsInDangerOfDeath: boolean;
+  DangerOfDeathDesc: string;
+
+  IsInRiskOfHarm: boolean;
+  RiskOfIrreparableHarm: string;
+
+  HasWitnessed: boolean;
+  NotWitnessedDesc: string;
+
+  AdultKnowsAboutReport: boolean;
+  AdultReactionOnReport: string;
+
+  FamilyKnowsAboutReport: boolean;
+  WhoKnowsInFamilyDesc: string;
+
+  HasInvolvedWithDDS: boolean;
+  InvolvementWithDDSDesc: string;
+
+  OthersReporters: boolean;
+  OthersReportersDesc: string;
+
+  HasPoliceInvoled: boolean;
+  LawEnforementDesc: string;
+
+  DirectionsToCurrentLocation: string;
+
+  ShortTermMemoryLoss: number;
+  ShortTermMemoryLossDesc: string | null;
+
+  Id: number;
+
+  IsSubmitted: boolean;
+
+  RecordedBy: string;
+  RecordedOn: string;
+
+  CreatedBy: string;
+  CreatedOn: string;
+}
+export interface UploadDocumentResponse {
+  uploadedCount: number;
+  failedCount?: number;
+  documents?: DocumentFile[];
+}

@@ -3,6 +3,9 @@ import type {
   CreateReferralRequest,
   CreateCaseStudyRequest,
   ApiResponse,
+    ReferralResponse,
+  CaseStudyResponse,
+  UploadDocumentResponse,
   DocumentFile,
 } from '../types';
 
@@ -13,24 +16,34 @@ const API_CONFIG = {
   },
 };
 
-const adaptApiResponse = <T>(response: any): ApiResponse<T> => {
-  if (response.Data !== undefined && response.Status !== undefined) {
+const adaptApiResponse = <T>(response: unknown): ApiResponse<T> => {
+  const res = response as {
+    Data?: T;
+    Status?: number;
+    Message?: string;
+    isSuccess?: boolean;
+    data?: T;
+    message?: string;
+    errors?: string[];
+  };
+
+  if (res.Data !== undefined && res.Status !== undefined) {
     return {
-      isSuccess: response.Status >= 200 && response.Status < 300,
-      data: response.Data,
-      message: response.Message || 'Success',
-      errors: response.Status >= 400 ? [response.Message || 'Error'] : undefined,
+      isSuccess: res.Status >= 200 && res.Status < 300,
+      data: res.Data,
+      message: res.Message || "Success",
+      errors: res.Status >= 400 ? [res.Message || "Error"] : undefined,
     };
   }
 
-  if (response.isSuccess !== undefined) {
-    return response;
+  if (res.isSuccess !== undefined) {
+    return res as ApiResponse<T>;
   }
 
   return {
     isSuccess: true,
-    data: response,
-    message: 'Success',
+    data: response as T,
+    message: "Success",
   };
 };
 
@@ -102,20 +115,20 @@ const handleApiCall = async <T>(
 
 export const api = {
   // ✅ CREATE Referral - POST
-  createReferral: async (data: CreateReferralRequest): Promise<ApiResponse<any>> => {
+  createReferral: async (data: CreateReferralRequest): Promise<ApiResponse<ReferralResponse>> => {
     console.log('📤 Creating new referral...');
     const url = `/beratenApi/public-portal/referrals`;
-    return handleApiCall<any>(url, {
+    return handleApiCall<ReferralResponse>(url, {
       method: 'POST',
       body: JSON.stringify(data),
     });
   },
 
   // ✅ GET Referral by ID - GET
-  getReferralById: async (referralId: number | string): Promise<ApiResponse<any>> => {
+  getReferralById: async (referralId: number | string): Promise<ApiResponse<ReferralResponse>> => {
     console.log('📤 Fetching referral for ID:', referralId);
     const url = `/beratenApi/public-portal/referrals/${referralId}`;
-    return handleApiCall<any>(url, {
+    return handleApiCall<ReferralResponse>(url, {
       method: 'GET',
     });
   },
@@ -124,7 +137,7 @@ export const api = {
 updateReferral: async (
   referralId: number | string,
   data: CreateReferralRequest
-): Promise<ApiResponse<any>> => {
+): Promise<ApiResponse<ReferralResponse>> => {
   console.log('📤 Updating referral ID:', referralId);
   console.log('📤 Update Data:', JSON.stringify(data, null, 2));
   
@@ -135,26 +148,26 @@ updateReferral: async (
   };
   
   const url = `/beratenApi/public-portal/referrals/${referralId}`;
-  return handleApiCall<any>(url, {
+  return handleApiCall<ReferralResponse>(url, {
     method: 'PUT',
     body: JSON.stringify(updateData),
   });
 },
 
   // ✅ CREATE Case Study - POST
-  createCaseStudy: async (data: CreateCaseStudyRequest): Promise<ApiResponse<any>> => {
+  createCaseStudy: async (data: CreateCaseStudyRequest): Promise<ApiResponse<CaseStudyResponse>> => {
     console.log('📤 Creating case study...');
     const url = `/beratenApi/public-portal/case-studies`;
-    return handleApiCall<any>(url, {
+    return handleApiCall<CaseStudyResponse>(url, {
       method: 'POST',
       body: JSON.stringify(data),
     });
   },
 // ✅ GET Case Study by Referral ID
-  getCaseStudyByReferralId: async (referralId: number | string): Promise<ApiResponse<any>> => {
+  getCaseStudyByReferralId: async (referralId: number | string): Promise<ApiResponse<CaseStudyResponse>> => {
     console.log('📤 Fetching case study for referral ID:', referralId);
     const url = `/beratenApi/public-portal/case-studies/${referralId}`;
-    return handleApiCall<any>(url, {
+    return handleApiCall<CaseStudyResponse>(url, {
       method: 'GET',
     });
   },
@@ -163,13 +176,13 @@ updateReferral: async (
 updateCaseStudy: async (
   publicReferralId: number | string,  
   data: CreateCaseStudyRequest
-): Promise<ApiResponse<any>> => {
+): Promise<ApiResponse<CaseStudyResponse>> => {
   console.log('📤 Updating case study for publicReferralId:', publicReferralId);
   console.log('📤 Update Data:', JSON.stringify(data, null, 2));
   
   // URL  publicReferralId 
   const url = `/beratenApi/public-portal/case-studies/${publicReferralId}`;
-  return handleApiCall<any>(url, {
+  return handleApiCall<CaseStudyResponse>(url, {
     method: 'PUT',
     body: JSON.stringify(data),
   });
@@ -178,7 +191,7 @@ updateCaseStudy: async (
   uploadMultiplePortalDocuments: async (
     docs: DocumentFile[],
     publicReferralId: number
-  ): Promise<ApiResponse<any>> => {
+  ): Promise<ApiResponse<UploadDocumentResponse>> => {
     console.log('📤 Uploading documents...');
 
     if (!docs || docs.length === 0) {
@@ -237,7 +250,7 @@ updateCaseStudy: async (
       }
 
       return adaptApiResponse(result);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('❌ Upload Documents Error:', error);
       throw error;
     }

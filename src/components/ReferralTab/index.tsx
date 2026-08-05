@@ -177,7 +177,7 @@ export const ReferralTab: React.FC<ReferralTabProps> = ({
   setErrors,
   isLoading,
   onSave,
-  referralId,
+
   isEditing = false,
 }) => {
   const updateField = <K extends keyof ReferralTabState>(
@@ -233,11 +233,7 @@ export const ReferralTab: React.FC<ReferralTabProps> = ({
           <h3 className="text-sm font-bold text-purple-600 uppercase tracking-wider flex items-center gap-2">
             <User className="w-4 h-4" />
             Victim / Client Information
-            {referralId && (
-              <span className="ml-2 text-xs font-normal text-gray-500">
-                {isEditing ? `(Editing ID: ${referralId})` : `(Referral ID: ${referralId})`}
-              </span>
-            )}
+          
           </h3>
         </div>
 
@@ -288,16 +284,14 @@ export const ReferralTab: React.FC<ReferralTabProps> = ({
           <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
             Approximate Age
           </label>
-          <input
+  <input
             type="number"
             min="0"
             max="150"
-            value={state.approximateAge ?? ''}
+            value={state.approximateAge || ''}
             onChange={(e) => {
-              const val = e.target.value ? Number(e.target.value) : 0;
-              if (val >= 0 && val <= 150) {
-                updateField('approximateAge', val);
-              }
+              const val = e.target.value;
+              updateField('approximateAge', val === '' ? '' as any : Number(val));
             }}
             className="w-full p-3.5 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition"
             placeholder="Age"

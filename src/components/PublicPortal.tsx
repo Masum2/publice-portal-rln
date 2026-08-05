@@ -213,91 +213,40 @@ const fetchReferralData = async (id: number) => {
 
 
       try {
-        const caseStudyResponse = await getCaseStudy(id);
-        console.log('📌 Full CaseStudy Response:', caseStudyResponse);
-        
-        if (caseStudyResponse.isSuccess && caseStudyResponse.data) {
-          let caseData = caseStudyResponse.data;
-          
-         
-          if (caseData.CaseStudy) {
-            caseData = caseData.CaseStudy;
-          } else if (caseData.Data && caseData.Data.CaseStudy) {
-            caseData = caseData.Data.CaseStudy;
-          } else if (caseData.PublicReferral && caseData.PublicReferral.CaseStudy) {
-            caseData = caseData.PublicReferral.CaseStudy;
-          }
-          
-       
-          if (!caseData.IncidentDesc && !caseData.incidentDesc) {
-            console.log('No case study data found');
-            setExistingCaseStudy(null);
-        
-            setCaseStudyState({
-              incidentDescription: '',
-              incidentLocation: '',
-              abuseDuration: '',
-              lastSeen: '',
-              shortTermMemoryLoss: null,
-              hasCausedHarm: null,
-              harmDescription: '',
-              healthFunctioning: '',
-              inDangerOfDeath: null,
-              deathDescription: '',
-              atRiskOfHarm: null,
-              riskDescription: '',
-              witnessedIncident: null,
-              howBecameAware: '',
-              adultKnowsReport: null,
-              adultReaction: '',
-              familyKnowsReport: null,
-              familyMembersKnow: '',
-              involvedWithDSS: null,
-              dssDescription: '',
-              otherReports: null,
-              otherReportsDescription: '',
-              lawEnforcementInvolved: null,
-              lawEnforcementDescription: '',
-            });
-          } else {
-            console.log('✅ Extracted case study data:', caseData);
-            console.log('✅ Case Study ID:', caseData.Id || caseData.id || caseData.caseStudyId);
-            
-    
-            setExistingCaseStudy(caseData);
-            
-        
-            setCaseStudyState({
-              incidentDescription: caseData.IncidentDesc || caseData.incidentDesc || '',
-              incidentLocation: caseData.IncidentLocation || caseData.incidentLocation || '',
-              abuseDuration: caseData.LengthOfAbuse || caseData.lengthOfAbuse || '',
-              lastSeen: caseData.LastSeenOn || caseData.lastSeenOn || '',
-              shortTermMemoryLoss: caseData.ShortTermMemoryLoss ?? caseData.shortTermMemoryLoss ?? null,
-              hasCausedHarm: caseData.CausedHarm ?? caseData.causedHarm ?? null,
-              harmDescription: caseData.CausedHarmDesc || caseData.causedHarmDesc || '',
-              healthFunctioning: caseData.HealthFunctioning || caseData.healthFunctioning || '',
-              inDangerOfDeath: caseData.IsInDangerOfDeath ?? caseData.isInDangerOfDeath ?? null,
-              deathDescription: caseData.DangerOfDeathDesc || caseData.dangerOfDeathDesc || '',
-              atRiskOfHarm: caseData.IsInRiskOfHarm ?? caseData.isInRiskOfHarm ?? null,
-              riskDescription: caseData.RiskOfIrreparableHarm || caseData.riskOfIrreparableHarm || '',
-              witnessedIncident: caseData.HasWitnessed ?? caseData.hasWitnessed ?? null,
-              howBecameAware: caseData.NotWitnessedDesc || caseData.notWitnessedDesc || '',
-              adultKnowsReport: caseData.AdultKnowsAboutReport ?? caseData.adultKnowsAboutReport ?? null,
-              adultReaction: caseData.AdultReactionOnReport || caseData.adultReactionOnReport || '',
-              familyKnowsReport: caseData.FamilyKnowsAboutReport ?? caseData.familyKnowsAboutReport ?? null,
-              familyMembersKnow: caseData.WhoKnowsInFamilyDesc || caseData.whoKnowsInFamilyDesc || '',
-              involvedWithDSS: caseData.HasInvolvedWithDDS ?? caseData.hasInvolvedWithDDS ?? null,
-              dssDescription: caseData.InvolvementWithDDSDesc || caseData.involvementWithDDSDesc || '',
-              otherReports: caseData.OthersReporters ?? caseData.othersReporters ?? null,
-              otherReportsDescription: caseData.OthersReportersDesc || caseData.othersReportersDesc || '',
-              lawEnforcementInvolved: caseData.HasPoliceInvoled ?? caseData.hasPoliceInvoled ?? null,
-              lawEnforcementDescription: caseData.LawEnforementDesc || caseData.lawEnforementDesc || '',
-            });
-          }
-        } else {
-          console.log('No existing case study found');
-          setExistingCaseStudy(null);
-        }
+     const caseStudyResponse = await getCaseStudy(id);
+
+if (caseStudyResponse.isSuccess) {
+    const caseData = caseStudyResponse.data;
+
+    setExistingCaseStudy(caseData);
+
+    setCaseStudyState({
+        incidentDescription: caseData.IncidentDesc,
+        incidentLocation: caseData.IncidentLocation,
+        abuseDuration: caseData.LengthOfAbuse,
+        lastSeen: caseData.LastSeenOn,
+        shortTermMemoryLoss: caseData.ShortTermMemoryLoss === 1,
+        hasCausedHarm: caseData.CausedHarm,
+        harmDescription: caseData.CausedHarmDesc,
+        healthFunctioning: caseData.HealthFunctioning,
+        inDangerOfDeath: caseData.IsInDangerOfDeath,
+        deathDescription: caseData.DangerOfDeathDesc,
+        atRiskOfHarm: caseData.IsInRiskOfHarm,
+        riskDescription: caseData.RiskOfIrreparableHarm,
+        witnessedIncident: caseData.HasWitnessed,
+        howBecameAware: caseData.NotWitnessedDesc,
+        adultKnowsReport: caseData.AdultKnowsAboutReport,
+        adultReaction: caseData.AdultReactionOnReport,
+        familyKnowsReport: caseData.FamilyKnowsAboutReport,
+        familyMembersKnow: caseData.WhoKnowsInFamilyDesc,
+        involvedWithDSS: caseData.HasInvolvedWithDDS,
+        dssDescription: caseData.InvolvementWithDDSDesc,
+        otherReports: caseData.OthersReporters,
+        otherReportsDescription: caseData.OthersReportersDesc,
+        lawEnforcementInvolved: caseData.HasPoliceInvoled,
+        lawEnforcementDescription: caseData.LawEnforementDesc,
+    });
+}
       } catch (caseError) {
         console.log('Error fetching case study:', caseError);
         setExistingCaseStudy(null);
@@ -988,7 +937,7 @@ const saveCaseStudyTab = async (): Promise<void> => {
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-4 flex items-center gap-3">
               <span className="text-blue-600 text-lg">✏️</span>
               <p className="text-sm text-blue-700">
-                <strong>Editing Mode:</strong> You are updating referral #{referralId}
+                <strong>Editing Mode:</strong>
               </p>
             </div>
           )}
