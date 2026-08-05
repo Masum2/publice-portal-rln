@@ -1,6 +1,6 @@
 // components/PublicPortal/CaseStudyTab/index.tsx
 import React, { useEffect } from 'react';
-import { AlertCircle, User, Shield } from 'lucide-react';
+import { AlertCircle, User, Shield, MapPin, FileText } from 'lucide-react';
 
 import type { CaseStudyTabErrors, CaseStudyTabState } from '../../types/CaseStudyTab/types';
 import { SaveButton } from '../SaveButton';
@@ -32,6 +32,7 @@ type RadioFieldKeys =
 
 type TextFieldKeys = 
   | 'incidentDescription'
+  | 'incidentDesc'
   | 'incidentLocation'
   | 'abuseDuration'
   | 'lastSeen'
@@ -44,7 +45,8 @@ type TextFieldKeys =
   | 'familyMembersKnow'
   | 'dssDescription'
   | 'otherReportsDescription'
-  | 'lawEnforcementDescription';
+  | 'lawEnforcementDescription'
+  | 'directionsToCurrentLocation';
 
 export const CaseStudyTab: React.FC<CaseStudyTabProps> = ({
   state,
@@ -68,12 +70,14 @@ export const CaseStudyTab: React.FC<CaseStudyTabProps> = ({
     }
     setState((prev) => ({ ...prev, [key]: value }));
   };
-useEffect(() => {
+
+  useEffect(() => {
     console.log('🔍 CaseStudyTab - State:', state);
     console.log('🔍 CaseStudyTab - existingCaseStudy:', existingCaseStudy);
     console.log('🔍 CaseStudyTab - isEditing:', isEditing);
     console.log('🔍 CaseStudyTab - referralId:', referralId);
   }, [state, existingCaseStudy, isEditing, referralId]);
+
   const renderError = (field: keyof CaseStudyTabErrors): React.ReactNode => {
     const error = errors[field];
     if (error) {
@@ -156,13 +160,10 @@ useEffect(() => {
     );
   };
 
-  // 👈 Check if case study exists
   const hasExistingCaseStudy = existingCaseStudy !== null && existingCaseStudy !== undefined;
 
   return (
     <>
-  
-
       {!referralId && !isReferralSaved && (
         <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-700 text-sm flex items-start gap-3">
           <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
@@ -173,7 +174,6 @@ useEffect(() => {
         </div>
       )}
 
-      {/* Form-level error */}
       {errors._form && (
         <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm flex items-start gap-3">
           <span className="text-red-500">⚠️</span>
@@ -188,63 +188,118 @@ useEffect(() => {
       )}
 
       <div className="space-y-6">
-        <div className="grid grid-cols-1 gap-6">
-          <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-              Incident Description (Abuse, Neglect, or Exploitation) <span className="text-red-500">*</span>
-            </label>
-            <textarea
-              rows={3}
-              value={state.incidentDescription}
-              onChange={(e) => updateField('incidentDescription', e.target.value)}
-              className={`w-full p-3.5 bg-white border rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition resize-none ${
-                errors.incidentDescription ? 'border-red-500' : 'border-gray-200'
-              }`}
-              placeholder="Describe the abuse, neglect, or exploitation..."
-            />
-            {renderError('incidentDescription')}
-          </div>
+        {/* Incident Information Section */}
+        <div className="bg-gradient-to-r from-blue-50/50 to-purple-50/50 border border-blue-200 rounded-xl p-5">
+          <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wider flex items-center gap-2 mb-4">
+            <FileText className="w-4 h-4 text-blue-600" />
+            Incident Information
+          </h3>
+          
+          <div className="grid grid-cols-1 gap-5">
+            {/* 1️⃣ Abuse, Neglect, Or Exploitation Description */}
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                Abuse, Neglect, Or Exploitation Description <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                rows={3}
+                value={state.incidentDescription}
+                onChange={(e) => updateField('incidentDescription', e.target.value)}
+                className={`w-full p-3.5 bg-white border rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition resize-none ${
+                  errors.incidentDescription ? 'border-red-500' : 'border-gray-200'
+                }`}
+                placeholder="Describe the abuse, neglect, or exploitation..."
+              />
+          
+              {renderError('incidentDescription')}
+            </div>
 
-          <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-              Incident Location <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={state.incidentLocation}
-              onChange={(e) => updateField('incidentLocation', e.target.value)}
-              className={`w-full p-3.5 bg-white border rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition ${
-                errors.incidentLocation ? 'border-red-500' : 'border-gray-200'
-              }`}
-              placeholder="Where did the incident occur?"
-            />
-            {renderError('incidentLocation')}
-          </div>
+            {/* 2️⃣ Incident Description - NEW */}
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                Incident Description <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                rows={3}
+                value={state.incidentDesc || ''}
+                onChange={(e) => updateField('incidentDesc', e.target.value)}
+                className={`w-full p-3.5 bg-white border rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition resize-none ${
+                  errors.incidentDesc ? 'border-red-500' : 'border-gray-200'
+                }`}
+                placeholder="Describe the incident in detail..."
+              />
+             
+              {renderError('incidentDesc')}
+            </div>
 
-          <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-              How long has Abuse been going on?
-            </label>
-            <input
-              type="text"
-              value={state.abuseDuration || ''}
-              onChange={(e) => updateField('abuseDuration', e.target.value)}
-              className="w-full p-3.5 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition"
-              placeholder="e.g., 2 weeks, 6 months..."
-            />
-          </div>
+            {/* 3️⃣ Incident Location */}
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                Incident Location <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={state.incidentLocation}
+                onChange={(e) => updateField('incidentLocation', e.target.value)}
+                className={`w-full p-3.5 bg-white border rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition ${
+                  errors.incidentLocation ? 'border-red-500' : 'border-gray-200'
+                }`}
+                placeholder="Where did the incident occur?"
+              />
+           
+              {renderError('incidentLocation')}
+            </div>
 
-          <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-              When did you last see the adult?
-            </label>
-            <input
-              type="text"
-              value={state.lastSeen || ''}
-              onChange={(e) => updateField('lastSeen', e.target.value)}
-              className="w-full p-3.5 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition"
-              placeholder="e.g., Yesterday, Last week..."
-            />
+            {/* 4️⃣ Directions To Current Location - NEW */}
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                Directions to Current Location <span className="text-red-500">*</span>
+              </label>
+              <div className="flex items-start gap-3">
+                
+                <textarea
+                  rows={2}
+                  value={state.directionsToCurrentLocation || ''}
+                  onChange={(e) => updateField('directionsToCurrentLocation', e.target.value)}
+                  className={`w-full p-3.5 bg-white border rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition resize-none ${
+                    errors.directionsToCurrentLocation ? 'border-red-500' : 'border-gray-200'
+                  }`}
+                  placeholder="Provide detailed directions to the adult's current location..."
+                />
+              </div>
+           
+              {renderError('directionsToCurrentLocation')}
+            </div>
+
+            {/* 5️⃣ How long has Abuse been going on? */}
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                How long has Abuse been going on?
+              </label>
+              <input
+                type="text"
+                value={state.abuseDuration || ''}
+                onChange={(e) => updateField('abuseDuration', e.target.value)}
+                className="w-full p-3.5 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition"
+                placeholder="e.g., 2 weeks, 6 months..."
+              />
+        
+            </div>
+
+            {/* 6️⃣ When did you last see the adult? */}
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                When did you last see the adult?
+              </label>
+              <input
+                type="text"
+                value={state.lastSeen || ''}
+                onChange={(e) => updateField('lastSeen', e.target.value)}
+                className="w-full p-3.5 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition"
+                placeholder="e.g., Yesterday, Last week..."
+              />
+           
+            </div>
           </div>
         </div>
 

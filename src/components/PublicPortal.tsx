@@ -117,32 +117,38 @@ const [existingCaseStudy, setExistingCaseStudy] = useState<any>(null);
     incidentComments: '',
   });
 
-  const [caseStudyState, setCaseStudyState] = useState({
-    incidentDescription: '',
-    incidentLocation: '',
-    abuseDuration: '',
-    lastSeen: '',
-    shortTermMemoryLoss: null as boolean | null,
-    hasCausedHarm: null as boolean | null,
-    harmDescription: '',
-    healthFunctioning: '',
-    inDangerOfDeath: null as boolean | null,
-    deathDescription: '',
-    atRiskOfHarm: null as boolean | null,
-    riskDescription: '',
-    witnessedIncident: null as boolean | null,
-    howBecameAware: '',
-    adultKnowsReport: null as boolean | null,
-    adultReaction: '',
-    familyKnowsReport: null as boolean | null,
-    familyMembersKnow: '',
-    involvedWithDSS: null as boolean | null,
-    dssDescription: '',
-    otherReports: null as boolean | null,
-    otherReportsDescription: '',
-    lawEnforcementInvolved: null as boolean | null,
-    lawEnforcementDescription: '',
-  });
+ const [caseStudyState, setCaseStudyState] = useState({
+  // ✅ ৬টি ফিল্ড
+  incidentDescription: '',
+  incidentDesc: '', // NEW
+  incidentLocation: '',
+  directionsToCurrentLocation: '', // NEW
+  abuseDuration: '',
+  lastSeen: '',
+  
+  // বাকি ফিল্ডগুলি
+  shortTermMemoryLoss: null as boolean | null,
+  hasCausedHarm: null as boolean | null,
+  harmDescription: '',
+  healthFunctioning: '',
+  inDangerOfDeath: null as boolean | null,
+  deathDescription: '',
+  atRiskOfHarm: null as boolean | null,
+  riskDescription: '',
+  witnessedIncident: null as boolean | null,
+  howBecameAware: '',
+  adultKnowsReport: null as boolean | null,
+  adultReaction: '',
+  familyKnowsReport: null as boolean | null,
+  familyMembersKnow: '',
+  involvedWithDSS: null as boolean | null,
+  dssDescription: '',
+  otherReports: null as boolean | null,
+  otherReportsDescription: '',
+  lawEnforcementInvolved: null as boolean | null,
+  lawEnforcementDescription: '',
+});
+
 
   const [docs, setDocs] = useState<DocumentFile[]>([]);
   const [isAgreed, setIsAgreed] = useState(false);
@@ -166,7 +172,6 @@ const [existingCaseStudy, setExistingCaseStudy] = useState<any>(null);
   }, []);
 
 
-
 const fetchReferralData = async (id: number) => {
   try {
     setIsSaving(true);
@@ -176,80 +181,79 @@ const fetchReferralData = async (id: number) => {
       const data = response.data;
       console.log('✅ Fetched referral data:', data);
 
- setReferralState({
-  victimFirstName: data.VictimFirstName || '',
-  victimLastName: data.VictimLastName || '',
-  approximateAge: data.ApproximateAge || 0,
-  victimAddress: data.VictimAddress || '',
-  victimPhone: data.Phone || '', // রেসপন্সে এটি 'Phone' আছে
-  reporterFirstName: data.ReporterFirstName || '',
-  reporterLastName: data.ReporterLastName || '',
-  relationship: data.APS_ReporterRelationshipLookupId ? 
-    getRelationshipText(data.APS_ReporterRelationshipLookupId) : '',
-  reporterAddress: data.ReporterAddress || '',
-  reporterCity: data.ReporterCity || '',
-  reporterState: data.ReporterStateLookupId ? 
-    getStateText(data.ReporterStateLookupId) : '',
-  reporterZip: data.ReporterZip || '',
-  reporterPhone: data.ReporterPhone || '',
-  reporterEmail: data.ReporterEmail || '',
-  organization: data.ReporterOrganization || '',
-  jobTitle: data.ReporterJobTitle || '',
-  
-  // ✅ ফিক্সড চেকবাক্স ম্যাপিং (ব্যাকএন্ডের সঠিক প্রপার্টি নাম অনুযায়ী)
-  hasWitnessed: Boolean(data.HasReporterWitnessed),
-  availableForMoreInfo: Boolean(data.IsReporterAvailableForMoreInfo),
-  anonymous: Boolean(data.IsReporterWantsTobeAnonomyous), // অবজেক্টে বানান 'IsReporterWantsTobeAnonomyous'
-  wantsToBeInformed: Boolean(data.IsReporterInterestedInUpdates),
-
-  incidentAddress: data.Address || '',
-  incidentCity: data.City || '',
-  incidentState: data.StateLookupId ? 
-    getStateText(data.StateLookupId) : '',
-  incidentCounty: data.CountyLookupId ? 
-    getCountyText(data.CountyLookupId) : '',
-  incidentZip: data.Zip || '',
-  incidentCommunity: data.CommunityLookupId ? 
-    getCommunityText(data.CommunityLookupId) : '',
-  incidentComments: data.Comments || '',
-});
-
+      setReferralState({
+        victimFirstName: data.VictimFirstName || '',
+        victimLastName: data.VictimLastName || '',
+        approximateAge: data.ApproximateAge || 0,
+        victimAddress: data.VictimAddress || '',
+        victimPhone: data.Phone || '',
+        reporterFirstName: data.ReporterFirstName || '',
+        reporterLastName: data.ReporterLastName || '',
+        relationship: data.APS_ReporterRelationshipLookupId ? 
+          getRelationshipText(data.APS_ReporterRelationshipLookupId) : '',
+        reporterAddress: data.ReporterAddress || '',
+        reporterCity: data.ReporterCity || '',
+        reporterState: data.ReporterStateLookupId ? 
+          getStateText(data.ReporterStateLookupId) : '',
+        reporterZip: data.ReporterZip || '',
+        reporterPhone: data.ReporterPhone || '',
+        reporterEmail: data.ReporterEmail || '',
+        organization: data.ReporterOrganization || '',
+        jobTitle: data.ReporterJobTitle || '',
+        hasWitnessed: Boolean(data.HasReporterWitnessed),
+        availableForMoreInfo: Boolean(data.IsReporterAvailableForMoreInfo),
+        anonymous: Boolean(data.IsReporterWantsTobeAnonomyous),
+        wantsToBeInformed: Boolean(data.IsReporterInterestedInUpdates),
+        incidentAddress: data.Address || '',
+        incidentCity: data.City || '',
+        incidentState: data.StateLookupId ? 
+          getStateText(data.StateLookupId) : '',
+        incidentCounty: data.CountyLookupId ? 
+          getCountyText(data.CountyLookupId) : '',
+        incidentZip: data.Zip || '',
+        incidentCommunity: data.CommunityLookupId ? 
+          getCommunityText(data.CommunityLookupId) : '',
+        incidentComments: data.Comments || '',
+      });
 
       try {
-     const caseStudyResponse = await getCaseStudy(id);
+        const caseStudyResponse = await getCaseStudy(id);
 
-if (caseStudyResponse.isSuccess) {
-    const caseData = caseStudyResponse.data;
+        if (caseStudyResponse.isSuccess) {
+          const caseData = caseStudyResponse.data;
+          setExistingCaseStudy(caseData);
 
-    setExistingCaseStudy(caseData);
-
-setCaseStudyState({
-      incidentDescription: caseData.IncidentDesc || '',
-      incidentLocation: caseData.IncidentLocation || '',
-      abuseDuration: caseData.LengthOfAbuse || '',
-      lastSeen: caseData.LastSeenOn || '',
-      shortTermMemoryLoss: Boolean(caseData.ShortTermMemoryLoss), // ব্যাকএন্ডে এটি 0/1 আছে
-      hasCausedHarm: Boolean(caseData.CausedHarm), // ব্যাকএন্ডে এটি true/false
-      harmDescription: caseData.CausedHarmDesc || '',
-      healthFunctioning: caseData.HealthFunctioning || '',
-      inDangerOfDeath: Boolean(caseData.IsInDangerOfDeath),
-      deathDescription: caseData.DangerOfDeathDesc || '',
-      atRiskOfHarm: Boolean(caseData.IsInRiskOfHarm),
-      riskDescription: caseData.RiskOfIrreparableHarm || '', // আপনার কোডে caseData.RiskOfIrreparableHarm ছিল, যা সঠিক
-      witnessedIncident: Boolean(caseData.HasWitnessed),
-      howBecameAware: caseData.NotWitnessedDesc || '',
-      adultKnowsReport: Boolean(caseData.AdultKnowsAboutReport),
-      adultReaction: caseData.AdultReactionOnReport || '',
-      familyKnowsReport: Boolean(caseData.FamilyKnowsAboutReport),
-      familyMembersKnow: caseData.WhoKnowsInFamilyDesc || '',
-      involvedWithDSS: Boolean(caseData.HasInvolvedWithDDS),
-      dssDescription: caseData.InvolvementWithDDSDesc || '',
-      otherReports: Boolean(caseData.OthersReporters), // ব্যাকএন্ডে এটি true/false
-      otherReportsDescription: caseData.OthersReportersDesc || '',
-      lawEnforcementInvolved: Boolean(caseData.HasPoliceInvoled), // ব্যাকএন্ডে বানান 'HasPoliceInvoled'
-      lawEnforcementDescription: caseData.LawEnforementDesc || '', // ব্যাকএন্ডে বানান 'LawEnforementDesc' (এনফোর্সমেন্টে 'c' নেই)
-    });
-}
+          setCaseStudyState({
+            // ✅ সঠিক ম্যাপিং
+            incidentDescription: caseData.AbuseNeglectOrExploitationDesc || caseData.IncidentDesc || '',
+            incidentDesc: caseData.IncidentDesc || '', // NEW
+            incidentLocation: caseData.IncidentLocation || '',
+            directionsToCurrentLocation: caseData.DirectionsToCurrentLocation || '', // NEW
+            abuseDuration: caseData.LengthOfAbuse || '',
+            lastSeen: caseData.LastSeenOn || '',
+            
+            shortTermMemoryLoss: Boolean(caseData.ShortTermMemoryLoss),
+            hasCausedHarm: Boolean(caseData.CausedHarm),
+            harmDescription: caseData.CausedHarmDesc || '',
+            healthFunctioning: caseData.HealthFunctioning || '',
+            inDangerOfDeath: Boolean(caseData.IsInDangerOfDeath),
+            deathDescription: caseData.DangerOfDeathDesc || '',
+            atRiskOfHarm: Boolean(caseData.IsInRiskOfHarm),
+            riskDescription: caseData.RiskOfIrreparableHarm || '',
+            witnessedIncident: Boolean(caseData.HasWitnessed),
+            howBecameAware: caseData.NotWitnessedDesc || '',
+            adultKnowsReport: Boolean(caseData.AdultKnowsAboutReport),
+            adultReaction: caseData.AdultReactionOnReport || '',
+            familyKnowsReport: Boolean(caseData.FamilyKnowsAboutReport),
+            familyMembersKnow: caseData.WhoKnowsInFamilyDesc || '',
+            involvedWithDSS: Boolean(caseData.HasInvolvedWithDDS),
+            dssDescription: caseData.InvolvementWithDDSDesc || '',
+            otherReports: Boolean(caseData.OthersReporters),
+            otherReportsDescription: caseData.OthersReportersDesc || '',
+            lawEnforcementInvolved: Boolean(caseData.HasPoliceInvoled),
+            lawEnforcementDescription: caseData.LawEnforementDesc || '',
+          });
+        }
       } catch (caseError) {
         console.log('Error fetching case study:', caseError);
         setExistingCaseStudy(null);
@@ -265,6 +269,7 @@ setCaseStudyState({
     setIsSaving(false);
   }
 };
+
 
 
 const getRelationshipText = (id: number): string => {
@@ -400,50 +405,58 @@ const getCommunityText = (id: number): string => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const validateCaseStudyTab = (): boolean => {
-    const newErrors: CaseStudyTabErrors = {};
+const validateCaseStudyTab = (): boolean => {
+  const newErrors: CaseStudyTabErrors = {};
 
-    if (!caseStudyState.incidentDescription?.trim()) {
-      newErrors.incidentDescription = 'Incident description is required';
-    }
-    if (!caseStudyState.incidentLocation?.trim()) {
-      newErrors.incidentLocation = 'Incident location is required';
-    }
+  // ✅ নতুন ২টি ফিল্ডের validation
+  if (!caseStudyState.incidentDescription?.trim()) {
+    newErrors.incidentDescription = 'Abuse, Neglect, Or Exploitation description is required';
+  }
+  if (!caseStudyState.incidentDesc?.trim()) {
+    newErrors.incidentDesc = 'Incident description is required';
+  }
+  if (!caseStudyState.incidentLocation?.trim()) {
+    newErrors.incidentLocation = 'Incident location is required';
+  }
+  if (!caseStudyState.directionsToCurrentLocation?.trim()) {
+    newErrors.directionsToCurrentLocation = 'Directions to current location is required';
+  }
 
-    if (caseStudyState.hasCausedHarm === null || caseStudyState.hasCausedHarm === undefined) {
-      newErrors.hasCausedHarm = 'Please select Yes, No, or Unknown';
-    }
-    if (caseStudyState.inDangerOfDeath === null || caseStudyState.inDangerOfDeath === undefined) {
-      newErrors.inDangerOfDeath = 'Please select Yes, No, or Unknown';
-    }
-    if (caseStudyState.atRiskOfHarm === null || caseStudyState.atRiskOfHarm === undefined) {
-      newErrors.atRiskOfHarm = 'Please select Yes, No, or Unknown';
-    }
-    if (caseStudyState.witnessedIncident === null || caseStudyState.witnessedIncident === undefined) {
-      newErrors.witnessedIncident = 'Please select Yes, No, or Unknown';
-    }
-    if (caseStudyState.adultKnowsReport === null || caseStudyState.adultKnowsReport === undefined) {
-      newErrors.adultKnowsReport = 'Please select Yes, No, or Unknown';
-    }
-    if (caseStudyState.familyKnowsReport === null || caseStudyState.familyKnowsReport === undefined) {
-      newErrors.familyKnowsReport = 'Please select Yes, No, or Unknown';
-    }
-    if (caseStudyState.involvedWithDSS === null || caseStudyState.involvedWithDSS === undefined) {
-      newErrors.involvedWithDSS = 'Please select Yes, No, or Unknown';
-    }
-    if (caseStudyState.otherReports === null || caseStudyState.otherReports === undefined) {
-      newErrors.otherReports = 'Please select Yes, No, or Unknown';
-    }
-    if (
-      caseStudyState.lawEnforcementInvolved === null ||
-      caseStudyState.lawEnforcementInvolved === undefined
-    ) {
-      newErrors.lawEnforcementInvolved = 'Please select Yes, No, or Unknown';
-    }
+  // বাকি validation গুলো
+  if (caseStudyState.hasCausedHarm === null || caseStudyState.hasCausedHarm === undefined) {
+    newErrors.hasCausedHarm = 'Please select Yes, No, or Unknown';
+  }
+  if (caseStudyState.inDangerOfDeath === null || caseStudyState.inDangerOfDeath === undefined) {
+    newErrors.inDangerOfDeath = 'Please select Yes, No, or Unknown';
+  }
+  if (caseStudyState.atRiskOfHarm === null || caseStudyState.atRiskOfHarm === undefined) {
+    newErrors.atRiskOfHarm = 'Please select Yes, No, or Unknown';
+  }
+  if (caseStudyState.witnessedIncident === null || caseStudyState.witnessedIncident === undefined) {
+    newErrors.witnessedIncident = 'Please select Yes, No, or Unknown';
+  }
+  if (caseStudyState.adultKnowsReport === null || caseStudyState.adultKnowsReport === undefined) {
+    newErrors.adultKnowsReport = 'Please select Yes, No, or Unknown';
+  }
+  if (caseStudyState.familyKnowsReport === null || caseStudyState.familyKnowsReport === undefined) {
+    newErrors.familyKnowsReport = 'Please select Yes, No, or Unknown';
+  }
+  if (caseStudyState.involvedWithDSS === null || caseStudyState.involvedWithDSS === undefined) {
+    newErrors.involvedWithDSS = 'Please select Yes, No, or Unknown';
+  }
+  if (caseStudyState.otherReports === null || caseStudyState.otherReports === undefined) {
+    newErrors.otherReports = 'Please select Yes, No, or Unknown';
+  }
+  if (
+    caseStudyState.lawEnforcementInvolved === null ||
+    caseStudyState.lawEnforcementInvolved === undefined
+  ) {
+    newErrors.lawEnforcementInvolved = 'Please select Yes, No, or Unknown';
+  }
 
-    setCaseStudyErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+  setCaseStudyErrors(newErrors);
+  return Object.keys(newErrors).length === 0;
+};
 
 
 // const prepareReferralData = (): CreateReferralRequest => {
@@ -584,12 +597,16 @@ const prepareReferralData = (): CreateReferralRequest => {
 
 const prepareCaseStudyData = (): CreateCaseStudyRequest => {
   const data: CreateCaseStudyRequest = {
-    incidentLocation: caseStudyState.incidentLocation || '',
-    incidentDesc: caseStudyState.incidentDescription || '',
+    // ✅ সঠিক ম্যাপিং - ৬টি ফিল্ড
+    incidentDesc: caseStudyState.incidentDesc || '',
     abuseNeglectOrExploitationDesc: caseStudyState.incidentDescription || '',
+    incidentLocation: caseStudyState.incidentLocation || '',
+    directionsToCurrentLocation: caseStudyState.directionsToCurrentLocation || '',
     lengthOfAbuse: caseStudyState.abuseDuration || '',
-    healthFunctioning: caseStudyState.healthFunctioning || '',
     lastSeenOn: caseStudyState.lastSeen || '',
+    
+    // বাকি ফিল্ডগুলি
+    healthFunctioning: caseStudyState.healthFunctioning || '',
     causedHarm: caseStudyState.hasCausedHarm || false,
     causedHarmDesc: caseStudyState.harmDescription || '',
     isInDangerOfDeath: caseStudyState.inDangerOfDeath || false,
@@ -608,7 +625,7 @@ const prepareCaseStudyData = (): CreateCaseStudyRequest => {
     othersReportersDesc: caseStudyState.otherReportsDescription || '',
     hasPoliceInvoled: caseStudyState.lawEnforcementInvolved || false,
     lawEnforementDesc: caseStudyState.lawEnforcementDescription || '',
-    directionsToCurrentLocation: '',
+    
     isSubmitted: false,
     publicReferralId: referralId || 0,
     CreatedBy: 105,
@@ -618,6 +635,7 @@ const prepareCaseStudyData = (): CreateCaseStudyRequest => {
 
   return data;
 };
+
 
 
 const saveReferralTab = async (): Promise<void> => {
