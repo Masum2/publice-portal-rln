@@ -326,3 +326,12 @@ export interface UploadDocumentResponse {
   failedCount?: number;
   documents?: DocumentFile[];
 }
+
+// types/SubmitTab/types.ts
+export interface SubmitTabState {
+  isAgreed: boolean;
+}
+
+export interface SubmitTabErrors {
+  _form?: string;
+}

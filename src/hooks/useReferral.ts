@@ -171,6 +171,27 @@ export const useReferral = () => {
     setIsLoading(false);
   };
 
+  // ✅ Verify Case Study Exists
+  const verifyCaseStudyExists = async (
+    referralId: number
+  ): Promise<ApiResponse<boolean>> => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      console.log('📤 Verifying case study exists for referral ID:', referralId);
+      const response = await api.verifyCaseStudyExists(referralId);
+      console.log('✅ Case study verification:', response);
+      return response;
+    } catch (err: unknown) {
+      const errorMsg = (err as Error).message || 'Failed to verify case study';
+      console.error('❌ Verify case study error:', errorMsg);
+      setError(errorMsg);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return {
     createReferral,
     getReferral,
@@ -179,6 +200,7 @@ export const useReferral = () => {
     getCaseStudy,
     updateCaseStudy,
     uploadDocuments,
+    verifyCaseStudyExists,
     isLoading,
     error,
     reset,

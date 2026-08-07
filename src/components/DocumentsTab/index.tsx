@@ -21,7 +21,7 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
   docs,
   onFileUpload,
   onRemoveFile,
- 
+  
   isReferralSaved,
   publicReferralId,
   referralId,
@@ -35,6 +35,9 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
   const [comments, setComments] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [localErrors, setLocalErrors] = useState<{ [key: string]: string }>({});
+  
+  // ✅ মোডাল কন্ট্রোল করার জন্য নতুন স্টেট
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   const effectiveReferralId = publicReferralId || referralId || 0;
 
@@ -106,69 +109,64 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
   };
 
   const handleSaveDocuments = async () => {
-  console.log('🖱️ Save button clicked');
+    console.log('🖱️ Save button clicked');
 
-  if (!effectiveReferralId) {
-    if (setErrors) {
-      setErrors({ _form: 'No referral ID available. Please save the Referral Info tab first.' });
-    }
-    return;
-  }
-
-  if (docs.length === 0) {
-    if (setErrors) {
-      setErrors({ _form: 'No documents to upload. Please add at least one document.' });
-    }
-    return;
-  }
-
-  // ✅ ডাবল কল প্রতিরোধ
-  if (isUploading) {
-    console.warn('⚠️ Upload already in progress, skipping...');
-    return;
-  }
-
-  setIsUploading(true);
-  try {
-    console.log('📤 Starting document upload with ID:', effectiveReferralId);
-    console.log('📄 Documents to upload:', docs.length);
-
-    const response = await api.uploadMultiplePortalDocuments(docs, effectiveReferralId);
-    
-    console.log('✅ Upload Response:', response);
-
-    if (response.isSuccess) {
-      // ✅ শুধু সাকসেস মেসেজ দেখান, onSave কল করবেন না
+    if (!effectiveReferralId) {
       if (setErrors) {
-        setErrors({ _form: '' });
+        setErrors({ _form: 'No referral ID available. Please save the Referral Info tab first.' });
       }
+      return;
+    }
+
+    if (docs.length === 0) {
+      if (setErrors) {
+        setErrors({ _form: 'No documents to upload. Please add at least one document.' });
+      }
+      return;
+    }
+
+    if (isUploading) {
+      console.warn('⚠️ Upload already in progress, skipping...');
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      console.log('📤 Starting document upload with ID:', effectiveReferralId);
+      console.log('📄 Documents to upload:', docs.length);
+
+      const response = await api.uploadMultiplePortalDocuments(docs, effectiveReferralId);
       
-      // ✅ সাকসেস মেসেজ দেখান (আপনার Success Modal ব্যবহার করতে পারেন)
-      alert(`✅ ${docs.length} document(s) uploaded successfully!`);
-      
-      // 👇 অথবা আপনার Success Modal কল করুন
-      // showSuccessModal(...);
-      
-    } else {
-      if (response.data?.uploadedCount > 0) {
+      console.log('✅ Upload Response:', response);
+
+      if (response.isSuccess) {
         if (setErrors) {
-          setErrors({ 
-            _form: `${response.data.uploadedCount} out of ${docs.length} documents uploaded successfully.` 
-          });
+          setErrors({ _form: '' });
         }
+        
+        // ✅ অ্যালার্টের পরিবর্তে এখানে সুন্দর স্মার্ট মোডাল ওপেন হবে
+        setShowSuccessModal(true);
+        
       } else {
-        throw new Error(response.message || 'Failed to upload documents');
+        if (response.data?.uploadedCount > 0) {
+          if (setErrors) {
+            setErrors({ 
+              _form: `${response.data.uploadedCount} out of ${docs.length} documents uploaded successfully.` 
+            });
+          }
+        } else {
+          throw new Error(response.message || 'Failed to upload documents');
+        }
       }
+    } catch (error: any) {
+      console.error('❌ Upload Error:', error);
+      if (setErrors) {
+        setErrors({ _form: `Failed to upload documents: ${error.message || 'Unknown error'}` });
+      }
+    } finally {
+      setIsUploading(false);
     }
-  } catch (error: any) {
-    console.error('❌ Upload Error:', error);
-    if (setErrors) {
-      setErrors({ _form: `Failed to upload documents: ${error.message || 'Unknown error'}` });
-    }
-  } finally {
-    setIsUploading(false);
-  }
-};
+  };
 
   const renderError = (field: string): React.ReactNode => {
     const error = localErrors[field] || errors[field as keyof ReferralTabErrors];
@@ -190,11 +188,11 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
             ? 'bg-green-50 border border-green-200 text-green-800' 
             : 'bg-amber-50 border border-amber-200 text-amber-800'
         }`}>
-{!effectiveReferralId ? (
-  <span>⚠️ Please save the Referral Info tab first to get a Referral ID.</span>
-) : (
-  <span>✅ Ready to upload document.</span>
-)}
+          {!effectiveReferralId ? (
+            <span>⚠️ Please save the Referral Info tab first to get a Referral ID.</span>
+          ) : (
+            <span>✅ Ready to upload document.</span>
+          )}
         </div>
 
         {/* Form-level error */}
@@ -359,6 +357,30 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
           disabled={isUploading || docs.length === 0 || !effectiveReferralId}
         />
       </div>
+
+      {/* ✅ Smart Success Modal Component */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full mx-4 shadow-2xl border border-gray-100 text-center space-y-4">
+            <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-3xl mx-auto shadow-inner">
+              🎉
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-gray-800">Upload Successful!</h3>
+              <p className="text-sm text-gray-500 mt-1">
+                All {docs.length} document(s) have been uploaded successfully.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowSuccessModal(false)}
+              className="w-full py-2.5 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl text-sm transition shadow-md shadow-green-200"
+            >
+              Continue
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 };

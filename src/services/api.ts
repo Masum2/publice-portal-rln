@@ -255,4 +255,15 @@ updateCaseStudy: async (
       throw error;
     }
   },
+
+  // ✅ Verify Case Study Exists
+  verifyCaseStudyExists: async (
+    referralId: number
+  ): Promise<ApiResponse<boolean>> => {
+    console.log('📤 Verifying case study exists for referral ID:', referralId);
+    const url = `/beratenApi/public-portal/VerifyCaseStudyExistsOrNot/${referralId}`;
+    return handleApiCall<boolean>(url, {
+      method: 'GET',
+    });
+  },
 };

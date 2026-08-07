@@ -1,6 +1,7 @@
 // components/PublicPortal/index.tsx
 import React, { useState, useEffect } from 'react';
-import { User, Upload, ClipboardList } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { User, Upload, ClipboardList, Shield } from 'lucide-react';
 
 import { ReferralTab } from './ReferralTab';
 import { CaseStudyTab } from './CaseStudyTab';
@@ -20,12 +21,13 @@ import type {
 import type { CaseStudyTabErrors } from '../types/CaseStudyTab/types';
 import type { ReferralTabErrors } from '../types/ReferralTab/types';
 import { useReferral } from '../hooks/useReferral';
+import { SubmitTab } from './SubmitTab/SubmitTab';
 
 interface PublicPortalProps {
   onAddReferral: (referral: Referral) => void;
 }
 
-type TabType = 'referral' | 'casestudy' | 'documents';
+type TabType = 'referral' | 'casestudy' | 'documents' | 'submit';
 
 interface SuccessModalState {
   isOpen: boolean;
@@ -40,6 +42,7 @@ interface SuccessModalState {
 }
 
 export const PublicPortal: React.FC<PublicPortalProps> = ({ onAddReferral }) => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<TabType>('referral');
   const [submitted, setSubmitted] = useState(false);
   const [generatedId, setGeneratedId] = useState('');
@@ -47,6 +50,213 @@ export const PublicPortal: React.FC<PublicPortalProps> = ({ onAddReferral }) => 
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 const [existingCaseStudy, setExistingCaseStudy] = useState<any>(null); 
+  const [submitState, setSubmitState] = useState({
+    isAgreed: false,
+  });
+  const [submitErrors, setSubmitErrors] = useState<{ _form?: string }>({});
+  const [showCaseStudyWarning, setShowCaseStudyWarning] = useState(false);
+
+  const handleAgreedChange = async (checked: boolean): Promise<void> => {
+    if (checked && referralId) {
+      try {
+        const response = await verifyCaseStudyExists(referralId);
+        // API: Data: false = exists, Data: true = doesn't exist
+        if (response.data === true) {
+          setShowCaseStudyWarning(true);
+          setSubmitState(prev => ({ ...prev, isAgreed: false }));
+        }
+      } catch (err) {
+        console.error('Case study verification error:', err);
+        setSubmitErrors({
+          _form: 'Failed to verify case study. Please try again.',
+        });
+      }
+    }
+  };
+
+  const handleSubmitForSubmitTab = async (): Promise<void> => {
+    // ১. Acknowledgement Checkbox চেক করুন
+    if (!submitState.isAgreed) {
+      setSubmitErrors({
+        _form: 'Please agree to the disclaimer before submitting.',
+      });
+      
+      // Error ফিল্ডে স্ক্রল করুন
+      const errorElement = document.querySelector('.submit-error');
+      if (errorElement) {
+        errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      return;
+    }
+
+    // ২. সব ট্যাব সেভ করা হয়েছে কিনা চেক করুন
+    if (!savedTabs.referral || !savedTabs.casestudy) {
+      setSubmitErrors({
+        _form: 'Please save Referral Info and Case Study sections before submitting.',
+      });
+      
+      const errorElement = document.querySelector('.submit-error');
+      if (errorElement) {
+        errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      return;
+    }
+
+    // ৩. লোকাল স্টেট থেকে রেফারেল আইডি চেক করুন
+    if (!referralId) {
+      setSubmitErrors({
+        _form: 'Referral ID not found. Please save the Referral Info first.',
+      });
+      return;
+    }
+
+    // ৪. সার্ভার থেকে কেস স্টাডি আছে কিনা যাচাই করুন
+    try {
+      const verification = await verifyCaseStudyExists(referralId);
+      if (verification.data === true) {
+        setShowCaseStudyWarning(true);
+        setSubmitState(prev => ({ ...prev, isAgreed: false }));
+        return;
+      }
+    } catch (err) {
+      setSubmitErrors({
+        _form: 'Failed to verify case study. Please try again.',
+      });
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      setSubmitErrors({});
+
+      // ৫. আপডেটেড রেফারেল ডেটা প্রস্তুত করুন (isSubmitted: true সহ)
+      const referralData = prepareReferralData();
+      
+      // ৬. কেস স্টাডি ডেটা প্রস্তুত করুন (isSubmitted: true সহ)
+      const caseStudyData = prepareCaseStudyData();
+
+      // ৭. রেফারেল আপডেট করুন (isSubmitted: true)
+      const updatedReferralData = {
+        ...referralData,
+        isSubmitted: true,
+        submittedAt: new Date().toISOString(),
+        status: 'Submitted',
+      };
+
+      if (isEditing && referralId) {
+        // PUT - আপডেট
+        const response = await updateReferral(referralId, {
+          ...updatedReferralData,
+          Id: referralId,
+        });
+
+        if (!response || !response.isSuccess) {
+          throw new Error(response?.message || 'Failed to submit referral');
+        }
+      } else {
+        // POST - নতুন তৈরি (যদি কোনো কারণে সেভ না হয়ে থাকে)
+        const response = await createReferral(updatedReferralData);
+        if (!response || !response.isSuccess) {
+          throw new Error(response?.message || 'Failed to submit referral');
+        }
+      }
+
+      // ৮. কেস স্টাডি আপডেট করুন (isSubmitted: true)
+      if (existingCaseStudy) {
+        const caseStudyId = existingCaseStudy.Id || existingCaseStudy.id || existingCaseStudy.caseStudyId;
+        if (caseStudyId) {
+          await updateCaseStudy(caseStudyId, {
+            ...caseStudyData,
+            id: Number(caseStudyId),
+            publicReferralId: Number(referralId),
+            isSubmitted: true,
+         
+          });
+        }
+      } else {
+        // কেস স্টাডি তৈরি করুন (যদি না থাকে)
+        await createCaseStudy({
+          ...caseStudyData,
+          publicReferralId: Number(referralId),
+          isSubmitted: true,
+         
+        });
+      }
+
+      // ৯. সাফল্য - ট্র্যাকিং আইডি তৈরি করুন
+      const trackingId = 'APS-2026-' + Math.floor(100000 + Math.random() * 900000);
+
+      // ১০. লোকাল রেফারেল অবজেক্ট তৈরি করুন
+      const referralDataForList: Referral = {
+        id: trackingId,
+        ...referralState,
+        ...caseStudyState,
+        status: 'Submitted',
+        submittedAt: new Date().toISOString(),
+        reviewStartedAt: null,
+        acceptedAt: null,
+        rejectedAt: null,
+        linkedClientId: null,
+        documents: docs,
+        hasCausedHarm: caseStudyState.hasCausedHarm || false,
+        harmDescription: caseStudyState.harmDescription || '',
+        healthFunctioning: caseStudyState.healthFunctioning || '',
+        inDangerOfDeath: caseStudyState.inDangerOfDeath || false,
+        deathDescription: caseStudyState.deathDescription || '',
+        atRiskOfHarm: caseStudyState.atRiskOfHarm || false,
+        riskDescription: caseStudyState.riskDescription || '',
+        witnessedIncident: caseStudyState.witnessedIncident || false,
+        howBecameAware: caseStudyState.howBecameAware || '',
+        adultKnowsReport: caseStudyState.adultKnowsReport || false,
+        adultReaction: caseStudyState.adultReaction || '',
+        familyKnowsReport: caseStudyState.familyKnowsReport || false,
+        familyMembersKnow: caseStudyState.familyMembersKnow || '',
+        involvedWithDSS: caseStudyState.involvedWithDSS || false,
+        dssDescription: caseStudyState.dssDescription || '',
+        otherReports: caseStudyState.otherReports || false,
+        otherReportsDescription: caseStudyState.otherReportsDescription || '',
+        lawEnforcementInvolved: caseStudyState.lawEnforcementInvolved || false,
+        lawEnforcementDescription: caseStudyState.lawEnforcementDescription || '',
+        referralId: String(referralId),
+        publicReferralId: String(referralId),
+      };
+
+      // ১১. প্যারেন্ট কম্পোনেন্টে যোগ করুন
+      onAddReferral(referralDataForList);
+
+      // ১২. সাফল্যের মেসেজ দেখান
+      setGeneratedId(trackingId);
+
+      showSuccessModal(
+        'submission',
+        '🎉 Referral Submitted Successfully!',
+        'Your referral has been securely lodged. Please save the reference token for future tracking.',
+        { id: trackingId }
+      );
+
+      // ১৩. Submit State রিসেট করুন
+      setSubmitState({ isAgreed: false });
+
+      // ১৪. হোম পেজে রিডাইরেক্ট করুন
+      setTimeout(() => {
+        navigate('/');
+      }, 2000);
+
+    } catch (error) {
+      console.error('❌ Submit error:', error);
+      setSubmitErrors({
+        _form: `Failed to submit: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      });
+      
+      // Error স্ক্রল করুন
+      const errorElement = document.querySelector('.submit-error');
+      if (errorElement) {
+        errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const [successModal, setSuccessModal] = useState<SuccessModalState>({
     isOpen: false,
@@ -63,7 +273,7 @@ const [existingCaseStudy, setExistingCaseStudy] = useState<any>(null);
     createCaseStudy,
      getCaseStudy,       
   updateCaseStudy, 
-    uploadDocuments,
+  verifyCaseStudyExists,
     isLoading,
     error,
     reset: resetApiError,
@@ -148,6 +358,8 @@ const [existingCaseStudy, setExistingCaseStudy] = useState<any>(null);
   lawEnforcementInvolved: null as boolean | null,
   lawEnforcementDescription: '',
 });
+
+// for submit tab
 
 
   const [docs, setDocs] = useState<DocumentFile[]>([]);
@@ -1014,6 +1226,14 @@ const saveCaseStudyTab = async (): Promise<void> => {
               label="Documents"
               isSaved={savedTabs.documents}
             />
+            <TabButton
+              isActive={activeTab === 'submit'}
+              onClick={() => setActiveTab('submit')}
+              icon={<Shield className="w-4 h-4" />}
+              label="Submit & Acknowledge"
+              isSaved={false}
+              isSubmitTab={true}
+            />
           </div>
 
           {/* Tab Content */}
@@ -1066,6 +1286,17 @@ const saveCaseStudyTab = async (): Promise<void> => {
                   setErrors={setErrors}
                 />
               )}
+           {activeTab === 'submit' && (
+  <SubmitTab
+    isAgreed={submitState.isAgreed}
+    setIsAgreed={(value) => setSubmitState(prev => ({ ...prev, isAgreed: value }))}
+    onAgreedChange={handleAgreedChange}
+    onSubmit={handleSubmitForSubmitTab}
+    isLoading={isLoadingState}
+    savedTabs={savedTabs}
+    error={submitErrors._form}
+  />
+)}
             </div>
           </div>
         </div>
@@ -1121,6 +1352,30 @@ const saveCaseStudyTab = async (): Promise<void> => {
         details={successModal.details}
         onContinue={handleModalContinue}
       />
+
+      {/* Case Study Missing Warning Modal */}
+      {showCaseStudyWarning && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 border border-gray-200 text-center animate-in fade-in zoom-in duration-300">
+            <div className="w-20 h-20 text-amber-600 bg-amber-100 rounded-full flex items-center justify-center text-4xl mx-auto mb-4">
+              ⚠️
+            </div>
+            <h3 className="text-xl font-bold text-gray-800">Case Study Required</h3>
+            <p className="text-gray-500 mt-2 text-sm">
+              Please fill out the Case Study information before submitting the report.
+            </p>
+            <button
+              onClick={() => {
+                setShowCaseStudyWarning(false);
+                setActiveTab('casestudy');
+              }}
+              className="mt-6 px-8 py-3 bg-amber-600 hover:bg-amber-500 text-white text-sm font-bold uppercase rounded-xl shadow-lg hover:shadow-xl transition transform hover:scale-105 w-full"
+            >
+              Go to Case Study
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Final Submission Success Screen */}
       {submitted && (
